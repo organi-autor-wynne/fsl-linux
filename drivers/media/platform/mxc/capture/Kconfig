@@ -35,7 +35,13 @@ config MXC_TVIN_ADV7180
 	depends on !VIDEO_MXC_EMMA_CAMERA && I2C
 	---help---
 	  If you plan to use the adv7180 video decoder with your MXC system, say Y here.
-
+	  
+config MXC_LVDSIN_DS90UR910Q
+	tristate "Analog Device DS90UR910Q LVDS Decoder Input support"
+	depends on !VIDEO_MXC_EMMA_CAMERA && I2C
+	---help---
+	  If you plan to use the DS90UR910Q video decoder with your MXC system, say Y here.
+	  
 choice
 	prompt "Select Overlay Rounting"
 	default MXC_IPU_DEVICE_QUEUE_SDC

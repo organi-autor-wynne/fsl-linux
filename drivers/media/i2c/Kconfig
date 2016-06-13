@@ -635,3 +635,12 @@ endif
 endmenu
 
 endif
+
+config VIDEO_DS90UR905Q
+	tristate "National DS90UR905Q video processor"
+	depends on I2C
+	---help---
+	  Support for DS90UR905Q RGB to LVDS chip
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called DS90UR905Q.

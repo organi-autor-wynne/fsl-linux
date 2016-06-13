@@ -154,6 +154,22 @@
 	};
 };
 
+&i2c3 {
+	clock-frequency = <400000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c3_1>;
+
+	ds90ur905q: ds90ur905q@69 {
+		compatible = "national ti, ds90ur905q";
+		reg = <0x69>;
+	};
+
+	ds90ur910q: ds90ur910q@3c {
+		compatible = "national ti, ds90ur910q";
+		reg = <0x3c>;
+	};
+};
+
 &gpmi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_gpmi_nand_2>;	
