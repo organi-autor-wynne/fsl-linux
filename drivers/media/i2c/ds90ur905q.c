@@ -53,6 +53,7 @@ static int ds90ur905_probe(struct i2c_client *client,
 			     const struct i2c_device_id *id)
 {
 
+	printk("ds90ur905_probe ds90ur905\n");
 	/* Check if the adapter supports the needed features */
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_SMBUS_BYTE_DATA))
 		return -EIO;
@@ -80,16 +81,23 @@ static int ds90ur905_remove(struct i2c_client *client)
 /* ----------------------------------------------------------------------- */
 
 static const struct i2c_device_id ds90ur905_id[] = {
-	{ "national ti, ds90ur905q", 0 },
+	{ "ds90ur905q", 0 },
 	{ }
 };
 
 MODULE_DEVICE_TABLE(i2c, ds90ur905_id);
 
+static const struct of_device_id ds90ur905q_of_match[] = {
+       { .compatible = "ti,ds90ur905q", },
+       { }
+};
+MODULE_DEVICE_TABLE(of, ds90ur905q_of_match);
+
 static struct i2c_driver ds90ur905_driver = {
 	.driver = {
 		.owner	= THIS_MODULE,
 		.name	= "ds90ur905q",
+		.of_match_table = ds90ur905q_of_match,
 	},
 	.probe = ds90ur905_probe,
 	.remove = ds90ur905_remove,

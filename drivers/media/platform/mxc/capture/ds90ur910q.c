@@ -67,16 +67,23 @@ static int ds90ur910q_probe(struct i2c_client *adapter,
 static int ds90ur910q_detach(struct i2c_client *client);
 
 static const struct i2c_device_id ds90ur910q_id[] = {
-	{"national ti, ds90ur910q", 0},
+	{"ti,ds90ur910q", 0},
 	{},
 };
 
 MODULE_DEVICE_TABLE(i2c, ds90ur910q_id);
 
+static const struct of_device_id ds90ur910q_of_match[] = {
+       { .compatible = "ti,ds90ur910q", },
+       { }
+};
+MODULE_DEVICE_TABLE(of, ds90ur910q_of_match);
+
 static struct i2c_driver ds90ur910q_i2c_driver = {
 	.driver = {
 		   .owner = THIS_MODULE,
 		   .name = "ds90ur910q",
+		   .of_match_table = ds90ur910q_of_match,
 		   },
 	.probe = ds90ur910q_probe,
 	.remove = ds90ur910q_detach,
@@ -884,6 +891,7 @@ static int ds90ur910q_probe(struct i2c_client *client,
 	struct pinctrl *pinctrl;
 	struct device *dev = &client->dev;
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
+	dev_err(dev, "ds90ur910q_probe\n ");
 
 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA)) {
 		dev_err(dev,
@@ -1057,14 +1065,15 @@ static __init int ds90ur910q_init(void)
 {
 	u8 err = 0;
 
-	pr_debug("In ds90ur910q_init\n");
+	pr_err("In ds90ur910q_init\n");
 
 	/* Tells the i2c driver what functions to call for this driver. */
 	err = i2c_add_driver(&ds90ur910q_i2c_driver);
 	if (err != 0)
 		pr_err("%s:driver registration failed, error=%d\n",
 			__func__, err);
-
+	pr_err("In ds90ur910q_init ok\n");
+	
 	return err;
 }
 

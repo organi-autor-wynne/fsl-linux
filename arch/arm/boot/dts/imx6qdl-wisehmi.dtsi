@@ -139,18 +139,31 @@
 			vsync-len = <8>;
 			pixelclk-active = <0>;
 		};
-                CLAA070LFA1_CW {/* cpt 800x480 */
-                        clock-frequency = <33000000>;
-                        hactive = <800>;
-                        vactive = <480>;
-                        hback-porch = <16>;
-                        hfront-porch = <210>;
-                        vback-porch = <10>;
-                        vfront-porch = <22>;
-                        hsync-len = <30>;
-                        vsync-len = <13>;
-                        pixelclk-active = <0>;
-                };
+            CLAA070LFA1_CW {/* cpt 800x480 */
+                    clock-frequency = <33000000>;
+                    hactive = <800>;
+                    vactive = <480>;
+                    hback-porch = <16>;
+                    hfront-porch = <210>;
+                    vback-porch = <10>;
+                    vfront-porch = <22>;
+                    hsync-len = <30>;
+                    vsync-len = <13>;
+                    pixelclk-active = <0>;
+            };
+	    DS90UR905Q {
+			clock-frequency = <4866048>;
+			hactive = <1280>;
+			vactive = <480>;
+			hback-porch = <256>;
+			hfront-porch = <1536>;
+			vback-porch = <48>;
+			vfront-porch = <528>;
+			hsync-len = <20>;
+			vsync-len = <8>;
+			pixelclk-active = <0>;
+		};
+
 	};
 };
 
@@ -160,12 +173,12 @@
 	pinctrl-0 = <&pinctrl_i2c3_1>;
 
 	ds90ur905q: ds90ur905q@69 {
-		compatible = "national ti, ds90ur905q";
+		compatible = "ti,ds90ur905q";
 		reg = <0x69>;
 	};
 
 	ds90ur910q: ds90ur910q@3c {
-		compatible = "national ti, ds90ur910q";
+		compatible = "ti,ds90ur910q";
 		reg = <0x3c>;
 	};
 };
