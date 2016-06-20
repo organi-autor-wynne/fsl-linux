@@ -20,6 +20,13 @@
 		  pinctrl-0 = <&pinctrl_ipu1_1>;
 		  status = "disabled";
 	};
+	
+	video0: v4l2_cap_0 {
+		compatible = "fsl,imx6q-v4l2-capture";
+		ipu_id = <0>;
+		csi_id = <1>;
+		mclk_source = <0>;
+		};
 };
 
 &fec {
@@ -152,7 +159,7 @@
                     pixelclk-active = <0>;
             };
 	    DS90UR905Q {
-			clock-frequency = <4866048>;
+			clock-frequency = <48660480>;
 			hactive = <1280>;
 			vactive = <480>;
 			hback-porch = <256>;
@@ -163,23 +170,6 @@
 			vsync-len = <8>;
 			pixelclk-active = <0>;
 		};
-
-	};
-};
-
-&i2c3 {
-	clock-frequency = <400000>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c3_1>;
-
-	ds90ur905q: ds90ur905q@69 {
-		compatible = "ti,ds90ur905q";
-		reg = <0x69>;
-	};
-
-	ds90ur910q: ds90ur910q@3c {
-		compatible = "ti,ds90ur910q";
-		reg = <0x3c>;
 	};
 };
 
@@ -267,4 +257,75 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexcan2_2>;
 	trx-stby-gpio = <&gpio7 12 GPIO_ACTIVE_HIGH>;
+};
+
+&i2c3 {
+	clock-frequency = <400000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c3_1>;
+
+	ds90ur905q: ds90ur905q@6e{
+		compatible = "ti,ds90ur905q";
+		reg = <0x6e>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ds90ur905q>;
+
+		pdb-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
+		bisten-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
+	};
+
+	ds90ur910q_mipi: ds90ur910q_mipi@37 {
+		compatible = "ti,ds90ur910q";
+		reg = <0x37>;
+		clocks = <&clks 201>;
+		clock-names = "csi_mclk";
+		pwn-gpios = <&gpio1 16 1>;   /* active low: SD1_CLK */
+		//rst-gpios = <&gpio1 20 0>;   /* active high: SD1_DAT2 */
+		csi_id = <1>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+	};
+};
+
+&iomuxc {
+    //pinctrl-names = "default";
+   // pinctrl-0 = <&pinctrl_hog>;
+
+    imx6qdl-wisehmi {
+   /* pinctrl_hog: hoggrp {
+                 fsl,pins = <
+                    MX6QDL_PAD_GPIO_19__CCM_CLKO1   0x1b0b0
+                 >;
+             };
+*/
+    pinctrl_ds90ur905q: ds90ur905qgrp {
+        fsl,pins = <
+         	 /* PDB */
+		MX6QDL_PAD_EIM_D19__GPIO3_IO19          0x80000000
+		/* RISTEN */
+		//MX6QDL_PAD_SD1_DAT2__GPIO1_IO19       0x80000000
+        >;
+    		};
+
+	pinctrl_ds90ur910q: ds90ur910qgrp {
+	        fsl,pins = <
+	         	 /* PDB */
+			MX6QDL_PAD_SD1_DAT0__GPIO1_IO16       0x80000000
+			/* RISTEN */
+			MX6QDL_PAD_SD1_DAT1__GPIO1_IO17       0x80000000
+			 /* PASS */
+			MX6QDL_PAD_SD1_DAT2__GPIO1_IO19       0x80000000
+			/* LOCK */
+			MX6QDL_PAD_SD1_DAT3__GPIO1_IO21       0x80000000
+	        >;
+    		};
+    	};
+};
+
+&mipi_csi {
+	status = "okay";
+	ipu_id = <0>;
+	csi_id = <1>;
+	v_channel = <0>;
+	lanes = <2>;
 };

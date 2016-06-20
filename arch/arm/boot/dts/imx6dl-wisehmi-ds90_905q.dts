@@ -1,16 +1,18 @@
 #include "imx6dl-wisehmi.dts"
 
 &mxcfb1 {
+	disp_dev = "lcd";
 	mode_str = "DS90UR905Q";
+	interface_pix_fmt = "BGR24";
 };
 
 &ldb {
 	channel0_mode = "jeida";
-	status = "okay";
+	status = "disable";
 };
 
 &lcd {
-	status = "disable";
+	status = "okay";
 };
 
 &i2c3 {

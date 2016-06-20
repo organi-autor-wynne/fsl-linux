@@ -109,7 +109,10 @@ enum {
 	/* module bttv: ident 878 + 879 */
 	V4L2_IDENT_BT878 = 878,
 	V4L2_IDENT_BT879 = 879,
-
+	
+	/* TI,DS90UR910Q */
+	V4L2_IDENT_DS90UR910Q = 910,
+	
 	/* module ks0127: reserved range 1120-1129 */
 	V4L2_IDENT_KS0122S = 1122,
 	V4L2_IDENT_KS0127  = 1127,

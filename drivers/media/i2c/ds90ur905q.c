@@ -20,6 +20,11 @@
 #include <linux/i2c.h>
 #include <linux/ioctl.h>
 #include <linux/slab.h>
+#include <linux/of_device.h>
+#include <linux/of_gpio.h>
+#include <linux/pinctrl/consumer.h>
+#include <linux/delay.h>
+#include <linux/device.h>
 
 static const u8 initial_registers[] = {
 	0x00, 0x00, /* Ser Config 1*/
@@ -52,6 +57,10 @@ static int write_regs(struct i2c_client *client, const u8 *regs)
 static int ds90ur905_probe(struct i2c_client *client,
 			     const struct i2c_device_id *id)
 {
+	enum of_gpio_flags flags;
+	int pdn_gpio = -1, pdn_active = 0, rstb_gpio = -1, rstb_active = 0;
+	struct pinctrl *pinctrl;
+	struct device *dev = &client->dev;
 
 	printk("ds90ur905_probe ds90ur905\n");
 	/* Check if the adapter supports the needed features */
@@ -60,6 +69,60 @@ static int ds90ur905_probe(struct i2c_client *client,
 
 	printk("chip found @ 0x%02x (%s)\n",
 			client->addr << 1, client->adapter->name);
+	
+	/* pinctrl */
+	pinctrl = devm_pinctrl_get_select_default(dev);
+	if (IS_ERR(pinctrl)) {
+		dev_err(dev, "ds90ur905_probe setup pinctrl failed\n");
+		return PTR_ERR(pinctrl);
+	}
+	
+	/* request power down pin */
+	pdn_gpio = of_get_named_gpio_flags(dev->of_node, "pdb-gpios", 0, &flags);
+	if (gpio_is_valid(pdn_gpio)) {
+		unsigned long gpiof;
+		if (flags == OF_GPIO_ACTIVE_LOW) {
+			pdn_active = 0;
+			gpiof = GPIOF_OUT_INIT_HIGH;
+		}
+		else {
+			pdn_active = 1;
+			gpiof = GPIOF_OUT_INIT_LOW;
+		}
+
+		if (devm_gpio_request_one(dev, pdn_gpio, gpiof, "ds90ur905_pdb")) {
+			dev_warn(dev, "ds90ur905_probe no power pin available!\n");
+			pdn_gpio = -1;
+		}
+	}
+	else
+		dev_err(dev, "ds90ur905_probe no sensor pdb pin available\n");
+
+	/* request reset pin */
+	rstb_gpio = of_get_named_gpio_flags(dev->of_node, "bisten-gpios", 0, &flags);
+	if (gpio_is_valid(rstb_gpio)) {
+		unsigned long gpiof;
+		if (flags == OF_GPIO_ACTIVE_LOW) {
+			rstb_active = 0;
+			gpiof = GPIOF_OUT_INIT_HIGH;
+		}
+		else {
+			rstb_active = 1;
+			gpiof = GPIOF_OUT_INIT_LOW;
+		}
+
+		if (devm_gpio_request_one(dev, rstb_gpio, gpiof, "ds90ur905_bisten")) {
+			dev_warn(dev, "ds90ur905_probe no bisten pin available!\n");
+			rstb_gpio = -1;
+		}
+	}
+	else
+		dev_err(dev, "ds90ur905_probe no sensor bisten pin available\n");
+
+	if (pdn_gpio >= 0) {
+		gpio_set_value_cansleep(pdn_gpio, !pdn_active);
+		msleep(10);
+	}
 
 	/* Initialize ds90ur905 */
 

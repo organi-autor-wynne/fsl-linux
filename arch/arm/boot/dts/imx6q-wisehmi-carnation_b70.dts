@@ -12,3 +12,7 @@
 &lcd {
 	status = "disable";
 };
+
+&i2c3 {
+	status = "okay";
+};
