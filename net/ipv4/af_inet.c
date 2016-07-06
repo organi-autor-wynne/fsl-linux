@@ -1793,7 +1793,11 @@ out_unregister_tcp_proto:
 	goto out;
 }
 
+#ifdef CONFIG_SUPPORT_INITROOT
+deferred_initcall(inet_init);
+#else
 fs_initcall(inet_init);
+#endif
 
 /* ------------------------------------------------------------------------ */
 

@@ -833,6 +833,30 @@ static int __init setup_of_earlycon(char *buf)
 early_param("earlycon", setup_of_earlycon);
 #endif
 
+#ifdef CONFIG_UBOOT_SMP_BOOT
+static void __init early_init_dt_check_for_uboot_spl_range(unsigned long node)
+{
+	unsigned long start, end, len;
+	__be32 *prop;
+
+	prop = of_get_flat_dt_prop(node, "uboot,spl-start", &len);
+	if (!prop)
+		return;
+	start = of_read_ulong(prop, len/4);
+
+	prop = of_get_flat_dt_prop(node, "uboot,spl-end", &len);
+	if (!prop)
+		return;
+	end = of_read_ulong(prop, len/4);
+
+	early_init_dt_setup_uboot_spl_range(start, end);
+}
+#else
+inline void early_init_dt_check_for_uboot_spl_range(unsigned long node)
+{
+}
+#endif
+
 /**
  * early_init_dt_scan_root - fetch the top level address and size cells
  */
@@ -930,7 +954,8 @@ int __init early_init_dt_scan_chosen(unsigned long node, const char *uname,
 		return 0;
 
 	early_init_dt_check_for_initrd(node);
-
+	early_init_dt_check_for_uboot_spl_range(node);
+	
 	/* Retrieve command line */
 	p = of_get_flat_dt_prop(node, "bootargs", &l);
 	if (p != NULL && l > 0)

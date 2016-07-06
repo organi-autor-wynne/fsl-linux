@@ -70,6 +70,10 @@ extern int early_init_dt_reserve_memory_arch(phys_addr_t base, phys_addr_t size,
 extern void * early_init_dt_alloc_memory_arch(u64 size, u64 align);
 extern u64 dt_mem_next_cell(int s, const __be32 **cellp);
 
+#ifdef CONFIG_UBOOT_SMP_BOOT
+extern void early_init_dt_setup_uboot_spl_range(unsigned long start, unsigned long end);
+#endif
+
 /* Early flat tree scan hooks */
 extern int early_init_dt_scan_root(unsigned long node, const char *uname,
 				   int depth, void *data);

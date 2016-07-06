@@ -605,6 +605,110 @@ static void __init clean_rootfs(void)
 }
 #endif
 
+#ifdef CONFIG_SUPPORT_INITROOT
+#include <linux/async.h>
+#include <asm/io.h>
+#include <asm/cacheflush.h>
+
+static async_cookie_t populate_initrootfs_cookie;
+
+int __init wait_populate_initrootfs_done(void)
+{
+	if(populate_initrootfs_cookie){
+		async_synchronize_cookie(populate_initrootfs_cookie);
+		return 0;
+	}
+	return 1;
+}
+
+u32 imx_get_cpu_arg(int cpu);
+void imx_set_cpu_arg(int cpu, u32 arg);
+void imx_enable_cpu(int cpu, bool enable);
+
+static void __init async_populate_initrootfs(void *data, async_cookie_t cookie)
+{
+	char* errmsg;
+#ifdef CONFIG_UBOOT_SMP_BOOT
+	int ret;
+	unsigned long timeout = jiffies + msecs_to_jiffies(5000);
+
+	// don't do SMP boot when secondary CPU not present or used by Linux already
+	if (!cpu_possible(1) || cpu_online(1)) {
+		printk(KERN_WARNING "UBOOT_SMP_BOOT enabled but secondary CPU is in wrong state\n");
+		goto unpack;
+	}
+
+	while ((ret = imx_get_cpu_arg(1)) == 0)
+		if (time_after(jiffies, timeout))
+			break;
+	imx_enable_cpu(1, false);
+	imx_set_cpu_arg(1, 0);
+
+	if (ret <= 0) {
+		printk(KERN_ERR "SMP load cpio fail %d\n", ret);
+		goto out;
+	}
+	else
+		printk(KERN_INFO "SMP load cpio success %x\n", ret);
+
+	//dmac_flush_range(initrd_start, initrd_end);
+unpack:
+#endif
+
+	if(!initrd_start)
+		return;
+
+	printk(KERN_INFO "Unpacking initramfs...\n");
+	errmsg = unpack_to_rootfs((char *)initrd_start, initrd_end - initrd_start);
+	if (errmsg)
+		printk(KERN_EMERG "Initramfs unpacking failed: %s\n", errmsg);
+	else
+		printk(KERN_INFO "Unpacking initramfs done\n");
+
+out:
+	free_initrd();
+}
+
+static int __init populate_initrootfs(void)
+{
+	int err;
+
+	err = sys_mkdir((const char __user __force *) "/dev", 0755);
+	if (err < 0)
+		goto out;
+
+	err = sys_mknod((const char __user __force *) "/dev/console",
+			S_IFCHR | S_IRUSR | S_IWUSR,
+			new_encode_dev(MKDEV(5, 1)));
+	if (err < 0)
+		goto out;
+
+	err = sys_mkdir((const char __user __force *) "/root", 0700);
+	if (err < 0)
+		goto out;
+
+	/*create initroot when cpio (find initroot | cpio -o -H newc > initramfs.cpio)*/
+/*	err = sys_mkdir((const char __user __force *) "/initroot", 0700);
+	if (err < 0)
+		goto out;
+*/
+
+	if(!initrd_start){
+		printk(KERN_INFO "no initrootfs.\n");
+		return 0;
+	}
+
+	populate_initrootfs_cookie = 
+		async_schedule(async_populate_initrootfs, NULL);
+
+	return 0;
+
+out:
+	printk(KERN_WARNING "Failed to create a rootfs for initroot\n");
+	return err;
+}
+rootfs_initcall(populate_initrootfs);
+#else
 static int __init populate_rootfs(void)
 {
 	char *err = unpack_to_rootfs(__initramfs_start, __initramfs_size);
@@ -656,3 +760,4 @@ static int __init populate_rootfs(void)
 	return 0;
 }
 rootfs_initcall(populate_rootfs);
+#endif

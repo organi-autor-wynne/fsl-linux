@@ -1,0 +1,9 @@
+#include "imx6q-wisehmi.dts"
+
+&mxcfb1 {
+	interface_pix_fmt = "RGB24";
+};
+
+&i2c3 {
+	status = "okay";
+};

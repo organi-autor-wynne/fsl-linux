@@ -33,6 +33,8 @@
 #include <linux/nfs_fs_sb.h>
 #include <linux/nfs_mount.h>
 
+#include <linux/clk.h>
+
 #include "do_mounts.h"
 
 int __initdata rd_doload;	/* 1 = load RAM disk, 0 = don't load */
@@ -43,6 +45,325 @@ static char __initdata saved_root_name[64];
 static int root_wait;
 
 dev_t ROOT_DEV;
+
+#ifdef CONFIG_SUPPORT_INITROOT
+#include <linux/namei.h>
+
+static char initroot_line[128], *pinitroot;
+static unsigned long root_timeout;
+static int realroot;
+
+static int __init do_mount_root(char *name, char *fs, int flags, void *data);
+
+struct initroot_info{
+	char *dev_name;
+	char *fs;
+	char *initscript;
+};
+
+static struct initroot_info last_initroot_info;
+
+/*
+	format: initroot=[wait time]:[device],[filesystem],[initscript];[device],[filesystem],[initscript]
+	example: 
+		initroot=20:/dev/mtdblock4,squashfs,/linurc
+*/
+static int get_initroot_info(struct initroot_info *info)
+{
+	char *s=pinitroot;
+
+	if(!s || *s==0){
+		return -1;
+	}
+
+	if((((u32)s)-((u32)initroot_line))>sizeof(initroot_line)){	//first use
+		strncpy(initroot_line, s, sizeof(initroot_line));
+		s = pinitroot = initroot_line;
+	}
+
+	memset(info, 0, sizeof(struct initroot_info));
+	
+	info->dev_name = s;
+	for(;;s++){
+		if (*s == ','){	//next
+			*s++ = 0;
+			break;
+		}
+		if (*s == ';' || *s == 0){	//end
+			*s++ = 0;
+			pinitroot = s;
+			printk(KERN_WARNING"error initroot format at device name\n");
+			return -1;
+		}
+	}
+
+	info->fs = s;
+	for(;;s++){
+		if (*s == ','){	//next
+			*s++ = 0;
+			break;
+		}
+		if (*s == ';' || *s == 0){	//end
+			*s++ = 0;
+			pinitroot = s;
+			printk(KERN_WARNING"error initroot format at fs name\n");
+			return -1;
+		}
+	}
+
+	info->initscript = s;
+	for(;;s++){
+		if (*s == ','){	//next
+			*s++ = 0;
+			break;
+		}
+		if (*s == ';' || *s == 0){	//end
+			*s++ = 0;
+			break;
+		}
+	}
+
+	memcpy(&last_initroot_info, info, sizeof(last_initroot_info));
+	pinitroot = s;
+
+	return 0;
+}
+
+static struct k_sigaction old_sa;
+
+static void dummy_fn(int sig)
+{
+}
+
+static int set_sigchld_dummy(void)
+{
+	struct k_sigaction new_sa;
+ 
+	new_sa.sa.sa_handler = dummy_fn;
+	new_sa.sa.sa_flags = SA_ONESHOT | SA_NOMASK;
+	sigemptyset(&new_sa.sa.sa_mask);
+
+	return do_sigaction(SIGCHLD, &new_sa, &old_sa);
+}
+
+static int recover_sigchld(void)
+{
+	return do_sigaction(SIGCHLD, &old_sa, NULL);
+}
+
+static int __init do_initroot(char *init_filename)
+{
+	static char *argv[2];
+	extern char * envp_init[];
+
+	argv[0] = init_filename;
+	argv[1] = NULL;
+
+	sys_close(realroot);
+	sys_close(0);sys_close(1);sys_close(2);
+
+	(void) sys_open("/dev/console",O_RDWR,0);
+	(void) sys_dup(0);
+	(void) sys_dup(0);
+
+	sys_chdir("/initroot");
+	sys_chroot(".");
+	devtmpfs_mount("dev");
+
+	return sys_execve(init_filename,
+		(const char __user *const __user *)argv, 
+		(const char __user *const __user *)envp_init);
+}
+
+static int __init wait_thread_cpu_time_below(pid_t pid, int percent, int timeout_seconds)
+{
+	cputime_t utime, stime;
+	unsigned long cur, total;
+	struct task_struct *task = find_task_by_vpid(pid);
+	if (!task){
+		printk("Can't find task by pid %d\n", pid);
+		return 0;
+	}
+
+	for(;timeout_seconds>0;timeout_seconds--){
+		thread_group_cputime_adjusted(task, &utime, &stime);
+		cur = cputime_to_jiffies(utime+stime);
+		total = jiffies;
+
+		msleep(1000);
+		thread_group_cputime_adjusted(task, &utime, &stime);
+		cur = cputime_to_jiffies(utime+stime) - cur;
+		total = jiffies - total;
+
+//		printk("%s(%d): %ld\n", __FUNCTION__, pid, (cur*100)/total);
+		if((cur*100)/total<percent)
+			return 0;
+	}
+	return -1;
+}
+
+extern void do_deferred_initcalls(void);
+
+#ifdef CONFIG_UBOOT_SMP_BOOT
+static unsigned long uboot_spl_start;// = 0x17780000;
+static unsigned long uboot_spl_end;//   = 0x17800000;
+
+void __init early_init_dt_setup_uboot_spl_range(unsigned long start, unsigned long end)
+{
+	uboot_spl_start = start;
+	uboot_spl_end = end;
+}
+#endif
+
+static int __init try_initroot(void)
+{
+	struct initroot_info info;
+	dev_t initroot_dev;
+	int retv=0, mount_initroot_sucess=0, no_initrootfs=0;
+	pid_t pid;
+
+	retv=get_initroot_info(&info);
+	if(retv)
+		goto end;
+
+#ifdef CONFIG_BLK_DEV_INITRD
+	if(strcmp(info.fs, "initramfs")==0){
+		extern int wait_populate_initrootfs_done(void);
+		no_initrootfs = wait_populate_initrootfs_done();
+		if(!no_initrootfs)
+			mount_initroot_sucess=1;
+	}
+	else
+#endif
+	{
+		initroot_dev = name_to_dev_t(info.dev_name);
+		/* wait for any asynchronous scanning to complete */
+		if(initroot_dev==0){
+			unsigned int time=0;
+			printk(KERN_INFO "Waiting for initroot device %s...\n",	info.dev_name);
+			while (driver_probe_done() != 0 ||
+				(initroot_dev = name_to_dev_t(info.dev_name))==0){
+				time++;
+				if(time>root_timeout*10){
+					printk(KERN_INFO "Waiting for initroot device %s timeout\n", info.dev_name);
+					goto end;
+				}
+				msleep(100);
+			}
+			async_synchronize_full();
+		}
+
+		create_dev("/dev/initroot", initroot_dev);
+
+		sys_mkdir("/initroot", 0700);
+		/* mount initroot on rootfs /initroot */
+		mount_initroot_sucess = 
+			(sys_mount("/dev/initroot", "/initroot", info.fs, MS_RDONLY|MS_SILENT, NULL)==0);
+	}
+
+	if(mount_initroot_sucess){
+		long ret=0;
+		realroot = sys_open("/", 0, 0);
+
+		set_sigchld_dummy();
+
+		/*
+		 * In case that a resume from disk is carried out by linuxrc or one of
+		 * its children, we need to tell the freezer not to wait for us.
+		 */
+		current->flags |= PF_FREEZER_SKIP;
+
+		pid = kernel_thread((int (*)(void *))do_initroot, info.initscript, SIGCHLD|CLONE_FS);
+		if (pid > 0 && root_timeout > 0){
+			sigset_t waitset;
+
+			struct timespec timeout={.tv_sec = root_timeout};
+			sigisemptyset(&waitset);
+			sigaddset(&waitset, SIGUSR1);
+			sigaddset(&waitset, SIGCHLD);
+			for(;;){
+				ret = sys_rt_sigtimedwait(&waitset, NULL, &timeout, sizeof(sigset_t));
+				if (ret != -EINTR){// Interrupted by a signal other than SIGUSR1.
+					break;
+				}
+				printk("Wait int by others\n");
+			}
+			if (ret == -EAGAIN){
+				printk(KERN_WARNING"Wait SIGUSR1 Timeout, go on\n");
+				sys_kill(pid,SIGKILL);
+			}
+			else if(ret < 0){
+				printk(KERN_WARNING"sigtimedwait error\n");
+			}
+			else{ //init run ok
+				flush_signals(current); //we must flush it, otherwise init won't be run
+			}
+		}
+		current->flags &= ~PF_FREEZER_SKIP;
+		recover_sigchld();
+		wait_thread_cpu_time_below(pid+1, 50, root_timeout);
+
+		sys_fchdir(realroot);
+		sys_chroot(".");
+		if(ret == SIGCHLD || ret == -EAGAIN){
+			printk("initroot exit\n");
+			sys_umount("/initroot/dev", MNT_DETACH);
+			if(strcmp(info.fs, "initramfs"))
+				sys_umount("/initroot", MNT_DETACH);
+		}
+
+		sys_close(realroot);
+	}
+
+#ifdef CONFIG_UBOOT_SMP_BOOT
+	if(!no_initrootfs){
+		struct clk *usdhc2, *usdhc3;
+		// free clocks enabled for UBOOT load initrd
+		usdhc2 = clk_get_sys(NULL, "usdhc2");
+		usdhc3 = clk_get_sys(NULL, "usdhc3");
+		if (IS_ERR(usdhc2) || IS_ERR(usdhc3))
+			printk(KERN_ERR "UBOOT SMP BOOT: get mmc clock fail\n");
+		else {
+			clk_disable_unprepare(usdhc2);
+			clk_disable_unprepare(usdhc3);
+		}
+
+		if(uboot_spl_start){
+			// free memory reserved for UBOOT SPL
+			free_reserved_area(phys_to_virt(uboot_spl_start), 
+							   phys_to_virt(uboot_spl_end), 
+							   0, "uboot-spl");
+		}
+
+		// bring up secodary CPU
+		if (cpu_possible(1) && !cpu_online(1))
+			cpu_up(1);
+	}
+#endif
+
+end:
+	do_deferred_initcalls();
+
+	return retv;
+}
+
+static int __init initroot_dev_setup(char *line)
+{
+	root_timeout = simple_strtoul(line, &line, 0);
+
+	if(*line!=':'){
+		root_timeout = 0;
+		pinitroot = NULL;
+		return 1;
+	}
+	line++;
+
+	pinitroot = line;
+	return 1;
+}
+
+__setup("initroot=", initroot_dev_setup);
+#endif
 
 static int __init load_ramdisk(char *str)
 {
@@ -401,6 +722,9 @@ retry:
 			case -EINVAL:
 				continue;
 		}
+#ifdef CONFIG_SUPPORT_INITROOT
+		goto out;
+#endif
 	        /*
 		 * Allow the user to distinguish between failed sys_open
 		 * and bad superblock on root device.
@@ -420,6 +744,9 @@ retry:
 #endif
 		panic("VFS: Unable to mount root fs on %s", b);
 	}
+#ifdef CONFIG_SUPPORT_INITROOT
+	goto out;
+#endif
 	if (!(flags & MS_RDONLY)) {
 		flags |= MS_RDONLY;
 		goto retry;
@@ -561,6 +888,10 @@ void __init prepare_namespace(void)
 	wait_for_device_probe();
 
 	md_run_setup();
+	
+#ifdef CONFIG_SUPPORT_INITROOT
+	try_initroot();
+#endif
 
 	if (saved_root_name[0]) {
 		root_device_name = saved_root_name;

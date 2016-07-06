@@ -221,6 +221,10 @@ static inline void platform_set_drvdata(struct platform_device *pdev,
 #define module_platform_driver(__platform_driver) \
 	module_driver(__platform_driver, platform_driver_register, \
 			platform_driver_unregister)
+			
+#define deferred_module_platform_driver(__platform_driver) \
+	deferred_module_driver(__platform_driver, platform_driver_register, \
+			platform_driver_unregister)
 
 /* module_platform_driver_probe() - Helper macro for drivers that don't do
  * anything special in module init/exit.  This eliminates a lot of

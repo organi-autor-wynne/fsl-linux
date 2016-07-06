@@ -324,7 +324,8 @@ static int ldb_init(struct mxc_dispdrv_handle *mddh,
 
 	fb_videomode_from_videomode(&chan->vm, &fb_vm);
 	fb_videomode_to_var(&fbi->var, &fb_vm);
-
+	setting->fbi->var.bits_per_pixel = setting->default_bpp;
+	
 	setting->crtc = chan->crtc;
 
 	return 0;

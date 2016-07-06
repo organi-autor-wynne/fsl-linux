@@ -51,6 +51,7 @@
 #include <linux/string.h>
 #include <linux/time.h>
 #include <linux/uaccess.h>
+#include <linux/splashfb.h>
 
 #include "mxc_dispdrv.h"
 
@@ -77,6 +78,7 @@ struct mxcfb_info {
 	bool overlay;
 	bool alpha_chan_en;
 	bool late_init;
+	u32 min_nbuf;
 	bool first_set_par;
 	bool resolve;
 	bool prefetch;
@@ -954,8 +956,8 @@ static int _setup_disp_channel2(struct fb_info *fbi)
 static bool mxcfb_need_to_set_par(struct fb_info *fbi)
 {
 	struct mxcfb_info *mxc_fbi = fbi->par;
-
-	if ((fbi->var.activate & FB_ACTIVATE_FORCE) &&
+	if (mxc_fbi->first_set_par && 
+		(fbi->var.activate & FB_ACTIVATE_FORCE) &&
 	    (fbi->var.activate & FB_ACTIVATE_MASK) == FB_ACTIVATE_NOW)
 		return true;
 
@@ -1604,7 +1606,12 @@ static int mxcfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
 	if (var->xres_virtual < var->xres)
 		var->xres_virtual = var->xres;
 
-	if (var->yres_virtual < var->yres) {
+	if(mxc_fbi->min_nbuf){
+		if (var->yres_virtual < var->yres * mxc_fbi->min_nbuf)
+			var->yres_virtual = var->yres * mxc_fbi->min_nbuf;
+			triple_buffer = true;
+	}
+	else if (var->yres_virtual < var->yres) {
 		var->yres_virtual = var->yres * 3;
 		triple_buffer = true;
 	}
@@ -2825,7 +2832,7 @@ static int mxcfb_map_video_memory(struct fb_info *fbi)
 	fbi->screen_base = dma_alloc_writecombine(fbi->device,
 				fbi->fix.smem_len,
 				(dma_addr_t *)&fbi->fix.smem_start,
-				GFP_DMA | GFP_KERNEL);
+				GFP_DMA | GFP_KERNEL | __GFP_NOCLEAN);
 	if (fbi->screen_base == 0) {
 		dev_err(fbi->device, "Unable to allocate framebuffer memory\n");
 		fbi->fix.smem_len = 0;
@@ -3365,6 +3372,7 @@ static int mxcfb_get_of_property(struct platform_device *pdev,
 	int len;
 	u32 bpp, int_clk;
 	u32 late_init;
+	u32 min_nbuf=1;
 
 	err = of_property_read_string(np, "disp_dev", &disp_dev);
 	if (err < 0) {
@@ -3394,6 +3402,7 @@ static int mxcfb_get_of_property(struct platform_device *pdev,
 		dev_dbg(&pdev->dev, "get of property late_init fail\n");
 		return err;
 	}
+	of_property_read_u32(np, "min_nbuf", &min_nbuf);
 
 	plat_data->prefetch = of_property_read_bool(np, "prefetch");
 
@@ -3431,6 +3440,8 @@ static int mxcfb_get_of_property(struct platform_device *pdev,
 	plat_data->default_bpp = bpp;
 	plat_data->int_clk = (bool)int_clk;
 	plat_data->late_init = (bool)late_init;
+	plat_data->min_nbuf = min_nbuf;
+
 	return err;
 }
 
@@ -3483,6 +3494,7 @@ static int mxcfb_probe(struct platform_device *pdev)
 	mxcfbi = (struct mxcfb_info *)fbi->par;
 	mxcfbi->ipu_int_clk = plat_data->int_clk;
 	mxcfbi->late_init = plat_data->late_init;
+	mxcfbi->min_nbuf = plat_data->min_nbuf;
 	mxcfbi->first_set_par = true;
 	mxcfbi->prefetch = plat_data->prefetch;
 	mxcfbi->pre_num = -1;
@@ -3530,7 +3542,9 @@ static int mxcfb_probe(struct platform_device *pdev)
 		ret = mxcfb_register(fbi);
 		if (ret < 0)
 			goto mxcfb_register_failed;
-
+		
+		(void)show_splash_autorock(fbi);
+		
 		ipu_disp_set_global_alpha(mxcfbi->ipu, mxcfbi->ipu_ch,
 					  true, 0x80);
 		ipu_disp_set_color_key(mxcfbi->ipu, mxcfbi->ipu_ch, false, 0);

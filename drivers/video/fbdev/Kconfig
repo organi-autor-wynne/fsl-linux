@@ -36,6 +36,15 @@ menuconfig FB
 	  running graphical applications that directly touch the hardware
 	  (e.g. an accelerated X server) and that are not frame buffer
 	  device-aware may cause unexpected results. If unsure, say N.
+	  
+config FB_CMD_SPLASH
+	bool "Enable splash function"
+	depends on FB
+	select DECOMPRESS_GZIP
+	default n
+	---help---
+	 Splash can show the splash.bin when board bring up,the logo file is 
+	 loaded by the SPL before kernel.
 
 config FIRMWARE_EDID
        bool "Enable firmware EDID"

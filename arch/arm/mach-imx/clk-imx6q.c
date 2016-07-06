@@ -880,8 +880,9 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
 	}
 
 	/*Set enet_ref clock to 125M to supply for RGMII tx_clk */
-	clk_set_rate(clk[IMX6QDL_CLK_ENET_REF], 125000000);
-
+	//clk_set_rate(clk[IMX6QDL_CLK_ENET_REF], 125000000);
+	clk_set_rate(clk[IMX6QDL_CLK_ENET_REF], 50000000);
+	
 #ifdef CONFIG_MX6_VPU_352M
 	/*
 	 * If VPU 352M is enabled, then PLL2_PDF2 need to be
@@ -899,5 +900,11 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
 
 	imx6q_set_lpm(WAIT_CLOCKED);
 
+#ifdef CONFIG_UBOOT_SMP_BOOT
+	if (clk_prepare_enable(clk[IMX6QDL_CLK_USDHC2]))
+		printk(KERN_ERR "enable usdhc2 clk fail\n");
+	if (clk_prepare_enable(clk[IMX6QDL_CLK_USDHC3]))
+		printk(KERN_ERR "enable usdhc3 clk fail\n");
+#endif
 }
 CLK_OF_DECLARE(imx6q, "fsl,imx6q-ccm", imx6q_clocks_init);

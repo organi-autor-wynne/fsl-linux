@@ -1,0 +1,71 @@
+/*
+ * Copyright 2012=2015 Freescale Semiconductor, Inc.
+ * Copyright 2011 Linaro Ltd.
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+/dts-v1/;
+
+#include "imx6q.dtsi"
+#include "imx6qdl-wisehmi.dtsi"
+
+/ {
+	model = "Freescale i.MX6 Quad/Dual Wise HMI Board";
+	compatible = "autorock,imx6q-wisehmi", "autorock,imx6qdl-wisehmi", "fsl,imx6q";
+};
+
+&ldb {
+	lvds-channel@0 {
+		crtc = "ipu1-di0";
+	};
+
+	lvds-channel@1 {
+		crtc = "ipu1-di0";
+	};
+};
+
+&mxcfb1 {
+	status = "okay";
+};
+
+&fec {
+	status = "okay";
+};
+
+&ldb {
+	status = "okay";
+};
+
+&uart2 {
+	status = "okay";
+};
+
+&uart4 {
+	status = "okay";
+};
+
+&usdhc2 {
+	status = "okay";
+};
+
+&usdhc3 {
+	status = "okay";
+};
+
+/*&flexcan1 {
+	status = "okay";
+};
+
+&flexcan2 {
+	status = "okay";
+};*/
+
+&usbh1 {
+	status = "okay";
+};

@@ -266,8 +266,9 @@ static struct page *__dma_alloc_buffer(struct device *dev, size_t size, gfp_t gf
 	split_page(page, order);
 	for (p = page + (size >> PAGE_SHIFT), e = page + (1 << order); p < e; p++)
 		__free_page(p);
-
-	__dma_clear_buffer(page, size);
+	
+	if(!(gfp & __GFP_NOCLEAN))
+		__dma_clear_buffer(page, size);
 
 	return page;
 }
@@ -287,7 +288,7 @@ static void __dma_free_buffer(struct page *page, size_t size)
 
 #ifdef CONFIG_MMU
 
-static void *__alloc_from_contiguous(struct device *dev, size_t size,
+static void *__alloc_from_contiguous(struct device *dev, size_t size, gfp_t gfp,
 				     pgprot_t prot, struct page **ret_page,
 				     const void *caller, bool want_vaddr);
 
@@ -356,7 +357,7 @@ static int __init atomic_pool_init(void)
 		goto out;
 
 	if (dev_get_cma_area(NULL))
-		ptr = __alloc_from_contiguous(NULL, atomic_pool_size, prot,
+		ptr = __alloc_from_contiguous(NULL, atomic_pool_size, gfp, prot,
 					      &page, atomic_pool_init, true);
 	else
 		ptr = __alloc_remap_buffer(NULL, atomic_pool_size, gfp, prot,
@@ -524,7 +525,7 @@ static int __free_from_pool(void *start, size_t size)
 	return 1;
 }
 
-static void *__alloc_from_contiguous(struct device *dev, size_t size,
+static void *__alloc_from_contiguous(struct device *dev, size_t size, gfp_t gfp,
 				     pgprot_t prot, struct page **ret_page,
 				     const void *caller, bool want_vaddr)
 {
@@ -536,8 +537,9 @@ static void *__alloc_from_contiguous(struct device *dev, size_t size,
 	page = dma_alloc_from_contiguous(dev, count, order);
 	if (!page)
 		return NULL;
-
-	__dma_clear_buffer(page, size);
+	
+	if(!(gfp & __GFP_NOCLEAN))
+		__dma_clear_buffer(page, size);
 
 	if (!want_vaddr)
 		goto out;
@@ -587,7 +589,7 @@ static inline pgprot_t __get_dma_pgprot(struct dma_attrs *attrs, pgprot_t prot)
 #define __get_dma_pgprot(attrs, prot)				__pgprot(0)
 #define __alloc_remap_buffer(dev, size, gfp, prot, ret, c, wv)	NULL
 #define __alloc_from_pool(size, ret_page)			NULL
-#define __alloc_from_contiguous(dev, size, prot, ret, c, wv)	NULL
+#define __alloc_from_contiguous(dev, size, gfp, prot, ret, c, wv)	NULL
 #define __free_from_pool(cpu_addr, size)			0
 #define __free_from_contiguous(dev, page, cpu_addr, size, wv)	do { } while (0)
 #define __dma_free_remap(cpu_addr, size)			do { } while (0)
@@ -652,7 +654,7 @@ static void *__dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
 	else if (!dev_get_cma_area(dev))
 		addr = __alloc_remap_buffer(dev, size, gfp, prot, &page, caller, want_vaddr);
 	else
-		addr = __alloc_from_contiguous(dev, size, prot, &page, caller, want_vaddr);
+		addr = __alloc_from_contiguous(dev, size, gfp, prot, &page, caller, want_vaddr);
 
 	if (page)
 		*handle = pfn_to_dma(dev, page_to_pfn(page));
@@ -1135,8 +1137,9 @@ static struct page **__iommu_alloc_buffer(struct device *dev, size_t size,
 		page = dma_alloc_from_contiguous(dev, count, order);
 		if (!page)
 			goto error;
-
-		__dma_clear_buffer(page, size);
+		
+		if(!(gfp & __GFP_NOCLEAN))
+			__dma_clear_buffer(page, size);
 
 		for (i = 0; i < count; i++)
 			pages[i] = page + i;
@@ -1179,8 +1182,10 @@ static struct page **__iommu_alloc_buffer(struct device *dev, size_t size,
 			while (--j)
 				pages[i + j] = pages[i] + j;
 		}
-
-		__dma_clear_buffer(pages[i], PAGE_SIZE << order);
+		
+		if(!(gfp & __GFP_NOCLEAN))
+			__dma_clear_buffer(pages[i], PAGE_SIZE << order);
+		
 		i += 1 << order;
 		count -= 1 << order;
 	}

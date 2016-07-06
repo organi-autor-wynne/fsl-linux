@@ -146,7 +146,7 @@ _CMAFSLAlloc(
     mdl_priv->kvaddr = dma_alloc_writecombine(gcvNULL,
             NumPages * PAGE_SIZE,
             &mdl_priv->physical,
-            GFP_KERNEL | gcdNOWARN);
+            GFP_KERNEL | gcdNOWARN | __GFP_NOCLEAN);
 
     if (mdl_priv->kvaddr == gcvNULL)
     {

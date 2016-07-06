@@ -765,6 +765,8 @@ struct ipuv3_fb_platform_data {
 
 	/* Enable the PRE resolve engine or not? */
 	bool				resolve;
+
+	u32 min_nbuf;
 };
 
 #endif /* __LINUX_IPU_V3_H_ */
