@@ -509,7 +509,7 @@ static int imx_pinctrl_parse_groups(struct device_node *np,
 	int i;
 	u32 config;
 
-	dev_err(info->dev, "group(%d): %s\n", index, np->name);
+	dev_dbg(info->dev, "group(%d): %s\n", index, np->name);
 
 	if (info->flags & SHARE_MUX_CONF_REG)
 		pin_size = SHARE_FSL_PIN_SIZE;
@@ -576,7 +576,7 @@ static int imx_pinctrl_parse_groups(struct device_node *np,
 			pin->mux_mode |= IOMUXC_CONFIG_SION;
 		pin->config = config & ~IMX_PAD_SION;
 
-		dev_err(info->dev, "%s: 0x%x 0x%08lx", info->pins[pin_id].name,
+		dev_dbg(info->dev, "%s: 0x%x 0x%08lx", info->pins[pin_id].name,
 				pin->mux_mode, pin->config);
 	}
 
@@ -592,7 +592,7 @@ static int imx_pinctrl_parse_functions(struct device_node *np,
 	struct imx_pin_group *grp;
 	u32 i = 0;
 
-	dev_err(info->dev, "parse function(%d): %s\n", index, np->name);
+	dev_dbg(info->dev, "parse function(%d): %s\n", index, np->name);
 
 	func = &info->functions[index];
 

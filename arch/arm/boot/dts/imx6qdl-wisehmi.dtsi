@@ -61,6 +61,7 @@
 		default_bpp = <32>;
 		int_clk = <0>;
 		late_init = <0>;
+		min_nbuf = <2>;
 		status = "okay";
 	};
 
