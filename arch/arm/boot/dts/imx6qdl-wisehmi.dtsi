@@ -150,7 +150,7 @@
 			vsync-len = <2>;
 		};
 		AUO_C123HAN01_1:lvds_1920x720_95M{
-			clock-frequency = <40000000>;
+			clock-frequency = <95000000>;
 			hactive = <1920>;
 			vactive = <720>;
 			hback-porch = <50>;
