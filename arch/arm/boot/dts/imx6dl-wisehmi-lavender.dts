@@ -1,0 +1,10 @@
+#include "imx6dl-wisehmi.dts"
+
+&lcd {
+	default_ifmt = "BGR24";
+	native-mode = <&HSD070IDW1>;
+ };
+
+&mxcfb1 {
+	interface_pix_fmt = "BGR24";
+}; 
