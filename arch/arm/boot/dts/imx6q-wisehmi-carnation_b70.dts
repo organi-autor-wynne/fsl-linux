@@ -23,3 +23,11 @@
 &i2c3 {
 	status = "okay";
 };
+
+&video0{
+	status = "okay";
+};
+
+&usbh1 {
+	status = "okay";
+};

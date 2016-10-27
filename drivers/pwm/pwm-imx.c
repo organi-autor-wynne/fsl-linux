@@ -19,6 +19,7 @@
 #include <linux/pwm.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/of_gpio.h>
 
 /* i.MX1 and i.MX21 share the same PWM function block: */
 
@@ -269,6 +270,60 @@ static const struct of_device_id imx_pwm_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, imx_pwm_dt_ids);
 
+static int  wisehmi_display_sw_init(void)
+{
+	int ret_value = 0;
+	struct device_node *np = NULL;
+	int sw_gpio = 0, bl_active = 0;
+	int sw_gpio_flag = 1;
+
+	np = of_find_node_by_path("/display-switch");
+	if (!np) {
+		ret_value = -1;
+		goto label_out;
+	}
+
+	ret_value = of_device_is_available(np);
+	if (1 != ret_value) {
+		ret_value = -1;
+		goto label_out;
+	}
+
+	sw_gpio = of_get_named_gpio_flags(np, "display-sw-gpio", 0, &sw_gpio_flag);
+	if (!gpio_is_valid(sw_gpio)) {
+		ret_value = -1;
+		goto label_out;
+	}
+	else
+	{
+		unsigned long gpiof;
+		if (sw_gpio_flag == OF_GPIO_ACTIVE_LOW) {
+			bl_active = 0;
+			gpiof = GPIOF_OUT_INIT_HIGH;
+		}
+		else {
+			bl_active = 1;
+			gpiof = GPIOF_OUT_INIT_LOW;
+		}
+
+		if (gpio_request_one(sw_gpio, gpiof, "display-switch")) {
+			printk( "no power pin available!\n");
+			sw_gpio = -1;
+			goto label_out;
+		}
+	}
+
+	gpio_set_value(sw_gpio, bl_active);
+	//ret_value = gpio_get_value(sw_gpio);
+	//printk("wisehmi_display_sw_init***************ret_value: %d\n", bl_active);
+
+label_out:
+	if (-1 != ret_value)
+		return 0;
+	else
+		return -1;
+}
+
 static int imx_pwm_probe(struct platform_device *pdev)
 {
 	const struct of_device_id *of_id =
@@ -280,6 +335,13 @@ static int imx_pwm_probe(struct platform_device *pdev)
 
 	if (!of_id)
 		return -ENODEV;
+
+	/*if(wisehmi_display_sw_init())
+	{
+		dev_err(&pdev->dev, "gwisehmi_display_sw_init fail\n");
+		return -ENODEV;
+	}*/
+	wisehmi_display_sw_init();
 
 	imx = devm_kzalloc(&pdev->dev, sizeof(*imx), GFP_KERNEL);
 	if (imx == NULL)
