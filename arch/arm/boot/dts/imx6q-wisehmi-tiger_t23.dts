@@ -1,0 +1,42 @@
+#include "imx6q-wisehmi.dts"
+
+&ldb {
+	split-mode;
+
+	lvds-channel@0 {
+		crtc = "ipu1-di0";
+		
+		native-mode = <&AUO_C123HAN01_1>;
+	};
+
+	lvds-channel@1 {
+		crtc = "ipu1-di0";
+
+		native-mode = <&AUO_C123HAN01_1>;
+	};
+};
+
+&mxcfb1 {
+	interface_pix_fmt = "RGB24";
+};
+	
+&pwm3 {
+	status = "okay";
+};
+
+&wisehmi_bl {
+	default-brightness-level = <60>; 
+	status = "okay";
+};
+
+&i2c3 {
+	status = "okay";
+};
+
+&video0{
+	status = "okay";
+};
+
+&usbh1 {
+	status = "okay";
+};

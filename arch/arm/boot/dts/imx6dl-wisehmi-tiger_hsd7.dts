@@ -1,0 +1,35 @@
+#include "imx6dl-wisehmi.dts"
+
+&lcd {
+	default_ifmt = "BGR24";
+	native-mode = <&HSD070IDW1>;
+ };
+
+&mxcfb1 {
+	interface_pix_fmt = "BGR24";
+}; 
+
+&displaysw{
+	display-sw-gpio = <&gpio1 20 GPIO_ACTIVE_LOW>;
+};
+
+&pwm3 {
+	status = "okay";
+};
+
+&wisehmi_bl {
+	default-brightness-level = <60>; 
+	status = "okay";
+};
+
+&i2c3 {
+	status = "okay";
+};
+
+&video0{
+	status = "okay";
+};
+
+&usbh1 {
+	status = "okay";
+};
