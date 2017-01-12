@@ -631,7 +631,8 @@ static void __init async_populate_initrootfs(void *data, async_cookie_t cookie)
 #ifdef CONFIG_UBOOT_SMP_BOOT
 	int ret;
 	unsigned long timeout = jiffies + msecs_to_jiffies(5000);
-
+printk("num_possible_cpus %d\n", num_possible_cpus());
+//goto unpack;
 	// don't do SMP boot when secondary CPU not present or used by Linux already
 	if (!cpu_possible(1) || cpu_online(1)) {
 		printk(KERN_WARNING "UBOOT_SMP_BOOT enabled but secondary CPU is in wrong state\n");

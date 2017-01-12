@@ -1,7 +1,7 @@
 #include "imx6dl-wisehmi.dts"
 
 &chosen{
-       bootargs = "ubi.mtd=3 root=ubi0:rootfs rootfstype=ubifs rootwait rw console=ttymxc3,115200n8 lpj=7905280 mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs)";
+       bootargs = "console=ttymxc3,115200n8 ubi.mtd=6 root=ubi0:rootfs rootfstype=ubifs fm_autoconvert=1 rootwait rw  mtdparts=gpmi-nand:64m(spl),1m(uboot),512k(env),512k(dtb),6m(kernel),58m(initramfs),-(rootfs) lpj=7905280 initroot=10:none,initramfs,/startup/run";
 };
 
 &lcd {

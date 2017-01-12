@@ -44,7 +44,6 @@ static int smsc_phy_ack_interrupt(struct phy_device *phydev)
 static int smsc_phy_config_init(struct phy_device *phydev)
 {
 	int rc = phy_read(phydev, MII_LAN83C185_CTRL_STATUS);
-
 	if (rc < 0)
 		return rc;
 

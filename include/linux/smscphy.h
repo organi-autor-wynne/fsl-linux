@@ -5,6 +5,7 @@
 #define MII_LAN83C185_IM  30 /* Interrupt Mask */
 #define MII_LAN83C185_CTRL_STATUS 17 /* Mode/Status Register */
 #define MII_LAN83C185_SPECIAL_MODES 18 /* Special Modes Register */
+#define MII_LAN83C185_CTRL_INDICATIONS 27 /* Special Control/Status Indications Register */
 
 #define MII_LAN83C185_ISF_INT1 (1<<1) /* Auto-Negotiation Page Received */
 #define MII_LAN83C185_ISF_INT2 (1<<2) /* Parallel Detection Fault */
@@ -26,5 +27,7 @@
 #define MII_LAN83C185_MODE_MASK      0xE0
 #define MII_LAN83C185_MODE_POWERDOWN 0xC0 /* Power Down mode */
 #define MII_LAN83C185_MODE_ALL       0xE0 /* All capable mode */
+
+#define MII_LAN83C185_DISABLE_AUTOMDIX (1 << 15) /*  Disable Auto-MDIX */
 
 #endif /* __LINUX_SMSCPHY_H__ */

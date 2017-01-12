@@ -33,10 +33,22 @@
 	status = "okay";
 };
 
+&uart3 {
+	status = "okay";
+};
+
 &video0{
 	status = "okay";
 };
 
 &usbh1 {
+	status = "okay";
+};
+
+&ssi1 {
+	status = "okay";
+};
+
+&audmux {
 	status = "okay";
 };

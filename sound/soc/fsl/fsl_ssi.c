@@ -1373,7 +1373,7 @@ static int fsl_ssi_probe(struct platform_device *pdev)
 	 */
 	if (!of_device_is_available(np))
 		return -ENODEV;
-
+	
 	of_id = of_match_device(fsl_ssi_ids, &pdev->dev);
 	if (!of_id || !of_id->data)
 		return -EINVAL;

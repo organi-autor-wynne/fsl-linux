@@ -1250,7 +1250,7 @@ static int wm8960_probe(struct snd_soc_codec *codec)
 		wm8960->set_bias_level = wm8960_set_bias_level_capless;
 	else
 		wm8960->set_bias_level = wm8960_set_bias_level_out3;
-
+  
 	snd_soc_add_codec_controls(codec, wm8960_snd_controls,
 				     ARRAY_SIZE(wm8960_snd_controls));
 	wm8960_add_widgets(codec);
@@ -1343,6 +1343,25 @@ static int wm8960_i2c_probe(struct i2c_client *i2c,
 	regmap_update_bits(wm8960->regmap, WM8960_LOUT2, 0x100, 0x100);
 	regmap_update_bits(wm8960->regmap, WM8960_ROUT2, 0x100, 0x100);
 
+	/* other configuration */  
+	regmap_update_bits(wm8960->regmap, WM8960_POWER1, 0x1ea, 0x1ea);  
+	regmap_update_bits(wm8960->regmap, WM8960_POWER2, 0x1f8, 0x1f8);  
+	regmap_update_bits(wm8960->regmap, WM8960_POWER3, 0xcc, 0xcc);  
+	regmap_update_bits(wm8960->regmap, WM8960_LOUTMIX, 0x100, 0x100);  
+	regmap_update_bits(wm8960->regmap, WM8960_ROUTMIX, 0x100, 0x100);  
+	regmap_update_bits(wm8960->regmap, WM8960_POWER3, 0xc, 0xc);  
+	regmap_update_bits(wm8960->regmap, WM8960_LOUT1, 0x7f, 0x7f);  
+	regmap_update_bits(wm8960->regmap, WM8960_ROUT1, 0x7f, 0x7f);  
+	regmap_update_bits(wm8960->regmap, WM8960_IFACE2, 0x40, 0x40);  
+	regmap_update_bits(wm8960->regmap, WM8960_MONOMIX2, 0x120, 0x120);  
+	regmap_update_bits(wm8960->regmap, WM8960_LINPATH, 0x1f8, 0x138);  
+	regmap_update_bits(wm8960->regmap, WM8960_LINVOL, 0x19f, 0x11f);  
+	regmap_update_bits(wm8960->regmap, WM8960_RINVOL, 0x19f, 0x11f);  
+	regmap_update_bits(wm8960->regmap, WM8960_LOUT2, 0x1ff, 0x1ff);  
+	regmap_update_bits(wm8960->regmap, WM8960_ROUT2, 0x1ff, 0x1ff);  
+	regmap_update_bits(wm8960->regmap, WM8960_CLASSD3, 0x1a, 0x12);  
+	regmap_update_bits(wm8960->regmap, WM8960_CLASSD1, 0xc0, 0xc0);  
+	
 	i2c_set_clientdata(i2c, wm8960);
 
 	ret = snd_soc_register_codec(&i2c->dev,

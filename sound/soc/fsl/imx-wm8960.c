@@ -24,7 +24,8 @@
 #include <linux/pinctrl/consumer.h>
 #include <linux/mfd/syscon.h>
 #include "../codecs/wm8960.h"
-#include "fsl_sai.h"
+//#include "fsl_sai.h"
+#include "imx-audmux.h"
 
 struct imx_wm8960_data {
 	struct snd_soc_card card;
@@ -291,19 +292,19 @@ static struct snd_pcm_hw_constraint_list imx_wm8960_rate_constraints = {
 static int imx_hifi_startup(struct snd_pcm_substream *substream)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	//struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	struct snd_soc_card *card = rtd->card;
 	struct imx_wm8960_data *data = snd_soc_card_get_drvdata(card);
-	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
-	struct fsl_sai *sai = dev_get_drvdata(cpu_dai->dev);
+	//bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
+	//struct fsl_sai *sai = dev_get_drvdata(cpu_dai->dev);
 	int ret = 0;
 
-	data->is_stream_opened[tx] = true;
+	/*data->is_stream_opened[tx] = true;
 	if (data->is_stream_opened[tx] != sai->is_stream_opened[tx] ||
 	    data->is_stream_opened[!tx] != sai->is_stream_opened[!tx]) {
 		data->is_stream_opened[tx] = false;
 		return -EBUSY;
-	}
+	}*/
 
 	if (!data->is_codec_master) {
 		ret = snd_pcm_hw_constraint_list(substream->runtime, 0,
@@ -355,11 +356,11 @@ static int imx_wm8960_late_probe(struct snd_soc_card *card)
 	/* GPIO1 used as headphone detect output */
 	snd_soc_update_bits(codec, WM8960_ADDCTL4, 7<<4, 3<<4);
 
-	/* Enable headphone jack detect */
+	/* Enable headphone jack detect 
 	snd_soc_update_bits(codec, WM8960_ADDCTL2, 1<<6, 1<<6);
 	snd_soc_update_bits(codec, WM8960_ADDCTL2, 1<<5, data->hp_det[1]<<5);
 	snd_soc_update_bits(codec, WM8960_ADDCTL4, 3<<2, data->hp_det[0]<<2);
-	snd_soc_update_bits(codec, WM8960_ADDCTL1, 3, 3);
+	snd_soc_update_bits(codec, WM8960_ADDCTL1, 3, 3);*/
 
 	return 0;
 }
@@ -417,6 +418,52 @@ static struct snd_soc_dai_link imx_wm8960_dai[] = {
 	},
 };
 
+static int imx_wm8960_audmux_config(struct platform_device *pdev)
+{
+	struct device_node *np = pdev->dev.of_node;
+	int int_port, ext_port;
+	int ret;
+
+	ret = of_property_read_u32(np, "mux-int-port", &int_port);
+	if (ret) {
+		dev_err(&pdev->dev, "mux-int-port missing or invalid\n");
+		return ret;
+	}
+	ret = of_property_read_u32(np, "mux-ext-port", &ext_port);
+	if (ret) {
+		dev_err(&pdev->dev, "mux-ext-port missing or invalid\n");
+		return ret;
+	}
+	dev_info(&pdev->dev, "audmux internal port %d, ext-por %d\n", int_port, ext_port);
+	
+	/*
+	 * The port numbering in the hardware manual starts at 1, while
+	 * the audmux API expects it starts at 0.
+	 */
+	int_port--;
+	ext_port--;
+	ret = imx_audmux_v2_configure_port(int_port,
+			IMX_AUDMUX_V2_PTCR_SYN |
+			IMX_AUDMUX_V2_PTCR_TFSEL(ext_port) |
+			IMX_AUDMUX_V2_PTCR_TCSEL(ext_port) |
+			IMX_AUDMUX_V2_PTCR_TFSDIR |
+			IMX_AUDMUX_V2_PTCR_TCLKDIR,
+			IMX_AUDMUX_V2_PDCR_RXDSEL(ext_port));
+	if (ret) {
+		dev_err(&pdev->dev, "audmux internal port setup failed\n");
+		return ret;
+	}
+	ret = imx_audmux_v2_configure_port(ext_port,
+			IMX_AUDMUX_V2_PTCR_SYN,
+			IMX_AUDMUX_V2_PDCR_RXDSEL(int_port));
+	if (ret) {
+		dev_err(&pdev->dev, "audmux external port setup failed\n");
+		return ret;
+	}
+
+	return 0;
+}
+
 static int imx_wm8960_probe(struct platform_device *pdev)
 {
 	struct device_node *cpu_np, *codec_np = NULL;
@@ -445,7 +492,13 @@ static int imx_wm8960_probe(struct platform_device *pdev)
 		ret = -EINVAL;
 		goto fail;
 	}
-
+	
+	if (strstr(cpu_np->name, "ssi")) {
+		ret = imx_wm8960_audmux_config(pdev);
+		if (ret)
+			goto fail;
+	}
+	
 	cpu_pdev = of_find_device_by_node(cpu_np);
 	if (!cpu_pdev) {
 		dev_err(&pdev->dev, "failed to find SAI platform device\n");

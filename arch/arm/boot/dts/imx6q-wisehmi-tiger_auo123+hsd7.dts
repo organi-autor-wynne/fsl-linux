@@ -1,16 +1,33 @@
 #include "imx6q-wisehmi.dts"
 
+&ldb {
+	split-mode;
+
+	lvds-channel@0 {
+		crtc = "ipu2-di0";
+		
+		native-mode = <&AUO_C123HAN01_1>;
+	};
+
+	lvds-channel@1 {
+		crtc = "ipu2-di0";
+
+		native-mode = <&AUO_C123HAN01_1>;
+	};
+};
+
+&mxcfb1 {
+	disp_dev = "ldb";
+	interface_pix_fmt = "RGB24";
+};
+
 &lcd {
 	default_ifmt = "BGR24";
 	native-mode = <&HSD070IDW1>;
 	status = "okay";
 };
 
-&ldb {
-	status = "disabled";
-};
-
-&mxcfb1 {
+&mxcfb2 {
 	disp_dev = "lcd";
 	interface_pix_fmt = "BGR24";
 	status = "okay";

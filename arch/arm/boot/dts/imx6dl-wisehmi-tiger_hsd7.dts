@@ -33,3 +33,11 @@
 &usbh1 {
 	status = "okay";
 };
+
+&ssi1 {
+	status = "okay";
+};
+
+&audmux {
+	status = "okay";
+};

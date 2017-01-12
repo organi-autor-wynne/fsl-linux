@@ -16,6 +16,7 @@
 / {
 	aliases {
 		mxcfb0 = &mxcfb1;
+		mxcfb1 = &mxcfb2;
 	};
 
 	chosen: chosen {
@@ -54,6 +55,30 @@
 		status = "disabled";
 	};*/
 
+	sound {
+		compatible = "fsl,imx6qdl-wisehmi-wm8960",
+			     "fsl,imx-audio-wm8960";
+		model = "wm8960-audio";
+		cpu-dai = <&ssi1>;
+		audio-codec = <&codec>;
+		codec-master;
+		/* JD2: hp detect high for headphone*/
+		hp-det = <2 0>;
+		hp-det-gpios = <&gpio2 13 0>;
+		audio-routing =
+			"Headphone Jack", "HP_L",
+			"Headphone Jack", "HP_R",
+			"Ext Spk", "SPK_LP",
+			"Ext Spk", "SPK_LN",
+			"Ext Spk", "SPK_RP",
+			"Ext Spk", "SPK_RN",
+			"LINPUT1", "Main MIC",
+			"Main MIC", "MICB";
+		assigned-clock-rates = <0>, <12288000>;
+		mux-int-port = <1>;
+		mux-ext-port = <3>;
+	};
+
 	mxcfb1: fb@0 {
 		compatible = "fsl,mxc_sdc_fb";
 		disp_dev = "ldb";
@@ -64,7 +89,19 @@
 		min_nbuf = <2>;
 		status = "okay";
 	};
-
+	
+	mxcfb2: fb@1 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "lcd";
+		interface_pix_fmt = "RGB24";
+		mode_str ="CLAA-WVGA";
+		default_bpp = <32>;
+		int_clk = <0>;
+		late_init = <0>;
+		min_nbuf = <2>;
+		status = "disabled";
+	};
+	
 	lcd: lcd@0 {
 		compatible = "fsl,lcd";
 		ipu_id = <0>;
@@ -226,11 +263,11 @@
 	};
 };
 
-/*&audmux {
+&audmux {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_audmux>;
-	status = "okay";
-};*/
+	status = "disabled";
+};
 
 /*&cpu0 {
 	arm-supply = <&sw1a_reg>;
@@ -245,10 +282,22 @@
 &fec {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet>;
-	phy-mode = "rgmii";
-	phy-reset-gpios = <&gpio1 25 0>;
-	fsl,magic-packet;
-	status = "okay";
+	phy-mode = "rmii";
+	phy-reset-gpios = <&gpio1 4 0>;
+	/*phy-handle = <&ethphy>;
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ethphy: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			interrupt-parent = <&gpio1>;
+			interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
+			reg = <1>;
+		};
+	};*/
+	phy-reset-duration = <1>;
+ 	fsl,magic-packet;
 };
 
 &gpc {
@@ -296,6 +345,16 @@
 		//amic-mono;
       // };
 
+	codec: wm8960@1a {
+		compatible = "wlf,wm8960";
+		reg = <0x1a>;
+		clocks = <&clks IMX6QDL_CLK_CKO>;
+		clock-names = "mclk";
+		/*headphone outputs
+		wlf,capless;*/
+		wlf,shared-lrclk;
+	};
+
       	tw9990: tw9990@44 {
 		compatible = "intersil,tw9990";
 		reg = <0x44>;
@@ -329,35 +388,37 @@
 				MX6QDL_PAD_CSI0_DAT4__AUD3_TXC		0x130b0
 				MX6QDL_PAD_CSI0_DAT5__AUD3_TXD		0x110b0
 				MX6QDL_PAD_CSI0_DAT6__AUD3_TXFS		0x130b0
+
+				MX6QDL_PAD_SD4_DAT5__GPIO2_IO13		0x80000000
 			>;
 		};
 
 		pinctrl_enet: enetgrp {
 			fsl,pins = <
-				MX6QDL_PAD_ENET_MDIO__ENET_MDIO		0x1b0b0
-				MX6QDL_PAD_ENET_MDC__ENET_MDC		0x1b0b0
-				MX6QDL_PAD_RGMII_TXC__RGMII_TXC		0x1b0b0
-				MX6QDL_PAD_RGMII_TD0__RGMII_TD0		0x1b0b0
-				MX6QDL_PAD_RGMII_TD1__RGMII_TD1		0x1b0b0
-				MX6QDL_PAD_RGMII_TD2__RGMII_TD2		0x1b0b0
-				MX6QDL_PAD_RGMII_TD3__RGMII_TD3		0x1b0b0
-				MX6QDL_PAD_RGMII_TX_CTL__RGMII_TX_CTL	0x1b0b0
-				MX6QDL_PAD_ENET_REF_CLK__ENET_TX_CLK	0x1b0b0
-				MX6QDL_PAD_RGMII_RXC__RGMII_RXC		0x1b0b0
-				MX6QDL_PAD_RGMII_RD0__RGMII_RD0		0x1b0b0
-				MX6QDL_PAD_RGMII_RD1__RGMII_RD1		0x1b0b0
-				MX6QDL_PAD_RGMII_RD2__RGMII_RD2		0x1b0b0
-				MX6QDL_PAD_RGMII_RD3__RGMII_RD3		0x1b0b0
-				MX6QDL_PAD_RGMII_RX_CTL__RGMII_RX_CTL	0x1b0b0
-				MX6QDL_PAD_GPIO_16__ENET_REF_CLK	0x4001b0a8
+			    /* RMII */
+				MX6QDL_PAD_ENET_MDIO__ENET_MDIO       0x1b0b0
+				MX6QDL_PAD_ENET_MDC__ENET_MDC         0x1b0b0
+				MX6QDL_PAD_ENET_CRS_DV__ENET_RX_EN    0x1b0b0
+				MX6QDL_PAD_ENET_RX_ER__ENET_RX_ER     0x1b0b0
+				MX6QDL_PAD_ENET_TX_EN__ENET_TX_EN     0x1b0b0
+				MX6QDL_PAD_ENET_RXD0__ENET_RX_DATA0   0x1b0b0
+				MX6QDL_PAD_ENET_RXD1__ENET_RX_DATA1   0x1b0b0
+				MX6QDL_PAD_ENET_TXD0__ENET_TX_DATA0   0x1b0b0
+				MX6QDL_PAD_ENET_TXD1__ENET_TX_DATA1   0x1b0b0
+				/* reset */
+				MX6QDL_PAD_GPIO_4__GPIO1_IO04         0x80000000
+				/* interrupt */
+				MX6QDL_PAD_ENET_REF_CLK__GPIO1_IO23   0x80000000
+				/* reference clock */
+				MX6QDL_PAD_GPIO_16__ENET_REF_CLK      0x4001b0a8
 			>;
 		};
 
-		pinctrl_enet_irq: enetirqgrp {
+		/*pinctrl_enet_irq: enetirqgrp {
 			fsl,pins = <
 				MX6QDL_PAD_GPIO_6__ENET_IRQ		0x000b1
 			>;
-		};
+		};*/
 
 		pinctrl_i2c3: i2c3grp {
 			fsl,pins = <
@@ -389,7 +450,7 @@
 				MX6QDL_PAD_SD4_DAT0__NAND_DQS      0x00b1
 			>;
 		};
-
+		
 		pinctrl_ipu1: ipu1grp {
 			fsl,pins = <
 				MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK 0x10
@@ -436,7 +497,7 @@
 				MX6QDL_PAD_EIM_D24__UART3_TX_DATA   0x1b0b1
 				MX6QDL_PAD_EIM_D25__UART3_RX_DATA   0x1b0b1
 				// bt_wake
-				MX6QDL_PAD_GPIO_5__GPIO1_IO05       0x80000000
+				//MX6QDL_PAD_GPIO_5__GPIO1_IO05       0x80000000
 			>;
 		};
 
@@ -552,6 +613,18 @@
 };
 
 &ssi2 {
+	status = "disable";
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart2>;
+	status = "disable";
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart3>;
 	status = "disable";
 };
 

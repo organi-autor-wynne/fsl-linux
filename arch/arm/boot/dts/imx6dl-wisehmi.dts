@@ -67,7 +67,7 @@
 
 
 &iomuxc {
-	imx6qdl-wisehmi {
+	imx6qdl-wisehmi {		
 		pinctrl_ipu1_2: ipu1grp-2 { /* parallel camera */
 			fsl,pins = <
 				/*MX6QDL_PAD_CSI0_DAT12__IPU1_CSI0_DATA12    0x80000000

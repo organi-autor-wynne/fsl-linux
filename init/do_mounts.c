@@ -221,11 +221,11 @@ static int __init try_initroot(void)
 	dev_t initroot_dev;
 	int retv=0, mount_initroot_sucess=0, no_initrootfs=0;
 	pid_t pid;
-
+printk("try_initroot\n");
 	retv=get_initroot_info(&info);
 	if(retv)
 		goto end;
-
+printk("try_initroot info:	dev:%s, fs:%s, initscript:%s \n ", info.dev_name, info.fs, info.initscript);
 #ifdef CONFIG_BLK_DEV_INITRD
 	if(strcmp(info.fs, "initramfs")==0){
 		extern int wait_populate_initrootfs_done(void);
@@ -350,7 +350,7 @@ end:
 static int __init initroot_dev_setup(char *line)
 {
 	root_timeout = simple_strtoul(line, &line, 0);
-
+printk("initroot_dev_setup line:%s \n", line);
 	if(*line!=':'){
 		root_timeout = 0;
 		pinitroot = NULL;

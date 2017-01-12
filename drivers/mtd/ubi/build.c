@@ -1341,7 +1341,11 @@ out:
 	pr_err("UBI error: cannot initialize UBI, error %d", err);
 	return err;
 }
+#ifdef CONFIG_SUPPORT_INITROOT
+deferred_initcall(ubi_init);
+#else
 late_initcall(ubi_init);
+#endif
 
 static void __exit ubi_exit(void)
 {
