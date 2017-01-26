@@ -316,6 +316,32 @@ static int  wisehmi_display_sw_init(void)
 	gpio_set_value(sw_gpio, bl_active);
 	//ret_value = gpio_get_value(sw_gpio);
 	//printk("wisehmi_display_sw_init***************ret_value: %d\n", bl_active);
+	
+	sw_gpio = of_get_named_gpio_flags(np, "display-sw-second-gpio", 0, &sw_gpio_flag);
+	if (!gpio_is_valid(sw_gpio)) {
+		ret_value = -1;
+		goto label_out;
+	}
+	else
+	{
+		unsigned long gpiof;
+		if (sw_gpio_flag == OF_GPIO_ACTIVE_LOW) {
+			bl_active = 0;
+			gpiof = GPIOF_OUT_INIT_HIGH;
+		}
+		else {
+			bl_active = 1;
+			gpiof = GPIOF_OUT_INIT_LOW;
+		}
+
+		if (gpio_request_one(sw_gpio, gpiof, "display-switch")) {
+			printk( "no power pin available!\n");
+			sw_gpio = -1;
+			goto label_out;
+		}
+	}
+
+	gpio_set_value(sw_gpio, bl_active);
 
 label_out:
 	if (-1 != ret_value)

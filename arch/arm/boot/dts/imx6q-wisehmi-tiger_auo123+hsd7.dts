@@ -10,7 +10,10 @@
 	};
 
 	lvds-channel@1 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <24>;
 		crtc = "ipu2-di0";
+		status = "okay";
 
 		native-mode = <&AUO_C123HAN01_1>;
 	};
@@ -34,7 +37,7 @@
 };
 
 &displaysw{
-	display-sw-gpio = <&gpio1 20 GPIO_ACTIVE_LOW>;
+	display-sw-second-gpio = <&gpio1 20 GPIO_ACTIVE_LOW>;
 };
 
 &pwm3 {

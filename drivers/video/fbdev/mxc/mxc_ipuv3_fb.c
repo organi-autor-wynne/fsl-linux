@@ -1314,7 +1314,7 @@ static int mxcfb_set_par(struct fb_info *fbi)
 		if (fbi->var.sync & FB_SYNC_CLK_IDLE_EN)
 			sig_cfg.clkidle_en = true;
 
-		dev_dbg(fbi->device, "pixclock = %ul Hz\n",
+		dev_err(fbi->device, "pixclock = %ul Hz\n",
 			(u32) (PICOS2KHZ(fbi->var.pixclock) * 1000UL));
 
 		if (ipu_init_sync_panel(mxc_fbi->ipu, mxc_fbi->ipu_di,
@@ -3533,11 +3533,11 @@ static int mxcfb_probe(struct platform_device *pdev)
 		mxcfbi->ipu_ch_nf_irq = IPU_IRQ_BG_SYNC_NFACK;
 		mxcfbi->ipu_alp_ch_irq = IPU_IRQ_BG_ALPHA_SYNC_EOF;
 		mxcfbi->ipu_ch = MEM_BG_SYNC;
-		/* Unblank the primary fb only by default */
-		if (pdev->id == 0)
+		/* Unblank the primary fb only by default *///modify by wynne for multi display at 20170125
+		//if (pdev->id == 0)
 			mxcfbi->cur_blank = mxcfbi->next_blank = FB_BLANK_UNBLANK;
-		else
-			mxcfbi->cur_blank = mxcfbi->next_blank = FB_BLANK_POWERDOWN;
+		//else
+			//mxcfbi->cur_blank = mxcfbi->next_blank = FB_BLANK_POWERDOWN;
 
 		ret = mxcfb_register(fbi);
 		if (ret < 0)

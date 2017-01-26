@@ -458,7 +458,7 @@ static int ldb_setup(struct mxc_dispdrv_handle *mddh,
 	serial_clk = ldb->spl_mode ? chan.vm.pixelclock * 7 / 2 :
 			chan.vm.pixelclock * 7;
 	clk_set_rate(ldb_di_sel_parent, serial_clk);
-
+	
 	/*
 	 * split mode or dual mode:
 	 * clock tree for the other channel
