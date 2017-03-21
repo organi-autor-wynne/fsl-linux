@@ -829,13 +829,17 @@ static void ds90ur910q_reset(void)
 
 static s32 ds90ur910q_write_reg(u8 reg, u8 val)
 {
+#if 0
 	if (i2c_master_send(ds90ur910q_data.i2c_client, &reg, 1) < 0) {
 		pr_err("%s:write reg error:reg=%x,val=%x\n",
 			__func__, reg, val);
 		return -1;
 	}
-
+	
 	return 0;
+#else
+	return i2c_smbus_write_byte_data(ds90ur910q_data.i2c_client, reg, val);
+#endif
 }
 
 static s32 ds90ur910q_read_reg(u8 reg, u8 *val)
@@ -1401,8 +1405,8 @@ static int ds90ur910q_init_mode(enum ds90ur910q_frame_rate frame_rate,
 	if (mode == ds90ur910q_mode_INIT)
 		mipi_csi2_reset(mipi_csi2_info);
 
-	if (ds90ur910q_data.pix.pixelformat == V4L2_PIX_FMT_UYVY)
-		mipi_csi2_set_datatype(mipi_csi2_info, MIPI_DT_YUV422);
+	if (ds90ur910q_data.pix.pixelformat == V4L2_PIX_FMT_RGB24)
+		mipi_csi2_set_datatype(mipi_csi2_info, MIPI_DT_RGB888);
 	else if (ds90ur910q_data.pix.pixelformat == V4L2_PIX_FMT_RGB565)
 		mipi_csi2_set_datatype(mipi_csi2_info, MIPI_DT_RGB565);
 	else
@@ -1456,6 +1460,8 @@ static int ds90ur910q_init_mode(enum ds90ur910q_frame_rate frame_rate,
 		msec_wait4stable = 300;
 	}
 	msleep(msec_wait4stable);
+#else
+	ds90ur910q_write_reg(CSI_CONFIG, 0x01<<6);
 #endif
 
 	if (mipi_csi2_info) {
@@ -2016,17 +2022,17 @@ static int ds90ur910q_probe(struct i2c_client *client,
 	if (retval < 0)
 		return retval;
 
-	/* request reset pin */
-	/*rst_gpio = of_get_named_gpio(dev->of_node, "rst-gpios", 0);
+	/* request bisten pin */
+	rst_gpio = of_get_named_gpio(dev->of_node, "bisten-gpios", 0);
 	if (!gpio_is_valid(rst_gpio)) {
-		dev_warn(dev, "no sensor reset pin available");
+		dev_warn(dev, "no sensor bisten pin available");
 		return -EINVAL;
 	}
 	retval = devm_gpio_request_one(dev, rst_gpio, GPIOF_OUT_INIT_HIGH,
-					"ds90ur910q_mipi_reset");
+					"ds90ur910q_mipi_bisten");
 	if (retval < 0)
 		return retval;
-*/
+	
 	/* Set initial values for the sensor struct. */
 	memset(&ds90ur910q_data, 0, sizeof(ds90ur910q_data));
 	ds90ur910q_data.sensor_clk = devm_clk_get(dev, "csi_mclk");
@@ -2062,7 +2068,7 @@ static int ds90ur910q_probe(struct i2c_client *client,
 
 	ds90ur910q_data.io_init = ds90ur910q_reset;
 	ds90ur910q_data.i2c_client = client;
-	ds90ur910q_data.pix.pixelformat = V4L2_PIX_FMT_UYVY;
+	ds90ur910q_data.pix.pixelformat = V4L2_PIX_FMT_RGB24;
 	ds90ur910q_data.pix.width = 640;
 	ds90ur910q_data.pix.height = 480;
 	ds90ur910q_data.streamcap.capability = V4L2_MODE_HIGHQUALITY |
@@ -2076,6 +2082,10 @@ static int ds90ur910q_probe(struct i2c_client *client,
 	//ds90ur910q_reset();
 
 	//ds90ur910q_standby(0);
+	
+	//ds90ur910q_write_reg(CONFIG1,  (ds90ur910q_read_reg(CONFIG1,  &chip_id_rev) & ~(0x03<< 2)) | 0x03<<2 | 0x01);
+	dev_err(dev, "read_reg 0x01 = 0x%x \n",  ds90ur910q_read_reg(CONFIG1,  &chip_id_rev));
+	gpio_set_value(rst_gpio, 1);
 
 	retval = ds90ur910q_read_reg(REVID, &chip_id_rev);
 	dev_err(dev, "chip_id_rev = %d \n", chip_id_rev);
@@ -2103,7 +2113,7 @@ static int ds90ur910q_probe(struct i2c_client *client,
 		return -ENODEV;
 	}*/
 
-	//ds90ur910q_standby(1);
+	ds90ur910q_standby(1);
 
 	ds90ur910q_int_device.priv = &ds90ur910q_data;
 	retval = v4l2_int_device_register(&ds90ur910q_int_device);

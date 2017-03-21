@@ -20,11 +20,12 @@
 	};
 
 	chosen {
-        bootargs = "root=/dev/mmcblk0p2 rootfstype=ext4 rootwait rw console=ttymxc3,115200n8 lpj=7905280 initroot=10:none,initramfs,/startup/run quiet";
+        bootargs = "root=/dev/mmcblk0p2 rootfstype=ext4 rootwait rw console=ttymxc3,115200n8 lpj=7905280 initroot=10:none,initramfs,/startup/run quiet coherent_pool=2M";
     };
 
 	aliases {
 		mxcfb0 = &mxcfb1;
+		mxcfb1 = &mxcfb2;
 	};
 
 	mxcfb1: fb@0 {
@@ -36,6 +37,18 @@
 		int_clk = <0>;
 		late_init = <0>;
 		status = "okay";
+	};
+
+	mxcfb2: fb@1 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "lcd";
+		interface_pix_fmt = "RGB24";
+		mode_str = "HSD070IDW1-G";
+		default_bpp = <32>;
+		int_clk = <0>;
+		late_init = <0>;
+		min_nbuf = <2>;
+		status = "disable";
 	};
 };
 

@@ -1,0 +1,26 @@
+#include "imx6q-wisehmi-tiger_auo123.dts"
+
+&mxcfb2 {
+	disp_dev = "lcd";
+	mode_str = "TFT9K2353";
+	interface_pix_fmt = "BGR24";
+	status = "okay";
+};
+
+&lcd {
+	status = "okay";
+};
+
+&iomuxc {
+	imx6qdl-wisehmi {
+		display_switch_2: displaysw-2 {
+			fsl,pins = <
+				MX6QDL_PAD_SD4_DAT1__GPIO2_IO09            0x80000000
+			>;
+			};
+	};
+};
+
+&displaysw{
+	display-sw-second-gpio = <&gpio2 9 GPIO_ACTIVE_HIGH>;
+};

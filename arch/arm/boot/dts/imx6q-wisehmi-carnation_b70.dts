@@ -16,3 +16,4 @@
 &i2c3 {
 	status = "okay";
 };
+

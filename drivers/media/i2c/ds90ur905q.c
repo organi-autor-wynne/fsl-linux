@@ -34,7 +34,7 @@ static const u8 initial_registers[] = {
 };
 
 
-static int read_reg(struct i2c_client *client, u8 reg)
+static int ds90ur905q_read_reg(struct i2c_client *client, u8 reg)
 {
 	return i2c_smbus_read_byte_data(client, reg);
 }
@@ -58,7 +58,7 @@ static int ds90ur905_probe(struct i2c_client *client,
 			     const struct i2c_device_id *id)
 {
 	enum of_gpio_flags flags;
-	int pdn_gpio = -1, pdn_active = 0, rstb_gpio = -1, rstb_active = 0;
+	int pdn_gpio = -1, pdn_active = 0, rstb_gpio = -1, rstb_active = 0, lcden_gpio = -1, lcden_active = 0;;
 	struct pinctrl *pinctrl;
 	struct device *dev = &client->dev;
 
@@ -68,14 +68,14 @@ static int ds90ur905_probe(struct i2c_client *client,
 		return -EIO;
 
 	printk("chip found @ 0x%02x (%s)\n",
-			client->addr << 1, client->adapter->name);
-	
+			client->addr, client->adapter->name);
+
 	/* pinctrl */
-	pinctrl = devm_pinctrl_get_select_default(dev);
+	/*pinctrl = devm_pinctrl_get_select_default(dev);
 	if (IS_ERR(pinctrl)) {
 		dev_err(dev, "ds90ur905_probe setup pinctrl failed\n");
 		return PTR_ERR(pinctrl);
-	}
+	}*/
 	
 	/* request power down pin */
 	pdn_gpio = of_get_named_gpio_flags(dev->of_node, "pdb-gpios", 0, &flags);
@@ -90,7 +90,7 @@ static int ds90ur905_probe(struct i2c_client *client,
 			gpiof = GPIOF_OUT_INIT_LOW;
 		}
 
-		if (devm_gpio_request_one(dev, pdn_gpio, gpiof, "ds90ur905_pdb")) {
+		if (devm_gpio_request_one(dev, pdn_gpio, GPIOF_OUT_INIT_HIGH, "ds90ur905_pdb")) {
 			dev_warn(dev, "ds90ur905_probe no power pin available!\n");
 			pdn_gpio = -1;
 		}
@@ -98,7 +98,7 @@ static int ds90ur905_probe(struct i2c_client *client,
 	else
 		dev_err(dev, "ds90ur905_probe no sensor pdb pin available\n");
 
-	/* request reset pin */
+	/* request bisten pin */
 	rstb_gpio = of_get_named_gpio_flags(dev->of_node, "bisten-gpios", 0, &flags);
 	if (gpio_is_valid(rstb_gpio)) {
 		unsigned long gpiof;
@@ -111,7 +111,7 @@ static int ds90ur905_probe(struct i2c_client *client,
 			gpiof = GPIOF_OUT_INIT_LOW;
 		}
 
-		if (devm_gpio_request_one(dev, rstb_gpio, gpiof, "ds90ur905_bisten")) {
+		if (devm_gpio_request_one(dev, rstb_gpio, GPIOF_OUT_INIT_HIGH, "ds90ur905_bisten")) {
 			dev_warn(dev, "ds90ur905_probe no bisten pin available!\n");
 			rstb_gpio = -1;
 		}
@@ -119,11 +119,14 @@ static int ds90ur905_probe(struct i2c_client *client,
 	else
 		dev_err(dev, "ds90ur905_probe no sensor bisten pin available\n");
 
-	if (pdn_gpio >= 0) {
+	/*if (pdn_gpio >= 0) {
 		gpio_set_value_cansleep(pdn_gpio, !pdn_active);
 		msleep(10);
-	}
-
+	}*/
+	
+	gpio_set_value(pdn_gpio, 1);
+	msleep(20);
+	
 	/* Initialize ds90ur905 */
 
 	/*if (write_regs(client, initial_registers) < 0) {
@@ -131,8 +134,12 @@ static int ds90ur905_probe(struct i2c_client *client,
 		return -EINVAL;
 	}*/
 	
-	printk( "read_reg @ 0x%x\n", read_reg(client, 0x01));
+	//write_reg(client, 0x00,  (ds90ur905q_read_reg(client, 0x00) & ~(0x03<< 2)) | 0x03<<2 | 0x01);
+	gpio_set_value(rstb_gpio, 1);
 
+	printk( "read_reg @ 0x%x\n", ds90ur905q_read_reg(client, 0x01));
+	dev_err(dev, "read_reg 0x00 = 0x%x \n",  ds90ur905q_read_reg(client, 0x00));
+	
 	return 0;
 }
 

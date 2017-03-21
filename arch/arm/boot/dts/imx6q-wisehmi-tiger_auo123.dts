@@ -1,0 +1,83 @@
+#include "imx6q-wisehmi.dts"
+
+&mxcfb1 {
+	mode_str = "AUO_C123HAN01_1";
+};
+
+&ldb {
+	mode = "spl0";
+	status = "okay";
+};
+
+&lcd {
+	status = "disable";
+};
+
+&i2c3 {
+	status = "okay";
+#if 0
+	ds90ur905q: ds90ur905q@6e {
+		compatible = "ti,ds90ur905q";
+		reg = <0x6e>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ds90ur905q>;
+
+		pdb-gpios = <&gpio3 29 GPIO_ACTIVE_HIGH>;
+		bisten-gpios = <&gpio3 21 GPIO_ACTIVE_LOW>;
+	};
+
+	ds90ur910q_mipi: ds90ur910q_mipi@37 {
+		compatible = "ti,ds90ur910q";
+		reg = <0x37>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ds90ur910q>;
+		
+		clocks = <&clks 201>;
+		clock-names = "csi_mclk";
+		pwn-gpios = <&gpio1 16 1>;   /* active low: SD1_DAT0 */
+		bisten-gpios = <&gpio1 17 1>;   /* active high: SD1_DAT1 */
+		csi_id = <1>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+	};
+#endif
+
+};
+
+&iomuxc {
+	imx6qdl-wisehmi {
+	#if 0
+		pinctrl_ds90ur905q: ds90ur905qgrp {
+			fsl,pins = <
+				 /* PDB */
+				MX6QDL_PAD_EIM_D29__GPIO3_IO29          0x80000000
+				/* RISTEN */
+				MX6QDL_PAD_EIM_D21__GPIO3_IO21       0x80000000
+			>;
+			};
+
+		pinctrl_ds90ur910q: ds90ur910qgrp {
+		        fsl,pins = <
+		         	 /* PDB */
+				MX6QDL_PAD_SD1_DAT0__GPIO1_IO16       0x80000000
+				/* BISTEN */
+				MX6QDL_PAD_SD1_DAT1__GPIO1_IO17       0x80000000
+				 /* PASS */
+				MX6QDL_PAD_SD1_DAT2__GPIO1_IO19       0x80000000
+				/* LOCK */
+				MX6QDL_PAD_SD1_DAT3__GPIO1_IO21       0x80000000
+		        >;
+	    		};
+	    #endif
+	    
+	};
+};
+
+&pwm3 {
+	status = "okay";
+};
+
+&wisehmi_bl {
+	default-brightness-level = <60>; 
+	status = "okay";
+};

@@ -234,6 +234,7 @@ static int clk_divider_set_rate(struct clk_hw *hw, unsigned long rate,
 
 	if (divider->lock)
 		spin_unlock_irqrestore(divider->lock, flags);
+printk("!!!!!!!!!!!!!!!!!!!!!rate =%ld, parent_rate=%ld\n",rate, parent_rate);
 
 	return 0;
 }

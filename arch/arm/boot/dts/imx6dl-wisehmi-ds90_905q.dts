@@ -3,7 +3,7 @@
 &mxcfb1 {
 	disp_dev = "lcd";
 	mode_str = "DS90UR905Q";
-	interface_pix_fmt = "BGR24";
+	interface_pix_fmt = "RGB24";
 };
 
 &ldb {
