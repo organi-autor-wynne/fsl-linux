@@ -11,14 +11,10 @@
  *  Free Software Foundation;  either version 2 of the  License, or (at your
  *  option) any later version.
  */
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/device.h>
 #include <linux/platform_device.h>
 #include <linux/dmaengine.h>
 #include <linux/types.h>
-#include <linux/platform_data/dma-imx.h>
+#include <linux/module.h>
 
 #include <sound/core.h>
 #include <sound/pcm.h>
@@ -29,12 +25,10 @@
 
 static bool filter(struct dma_chan *chan, void *param)
 {
-	struct snd_dmaengine_dai_dma_data *dma_data = param;
-
 	if (!imx_dma_is_general_purpose(chan))
 		return false;
 
-	chan->private = dma_data->filter_data;
+	chan->private = param;
 
 	return true;
 }
@@ -46,12 +40,6 @@ static const struct snd_pcm_hardware imx_pcm_hardware = {
 		SNDRV_PCM_INFO_MMAP_VALID |
 		SNDRV_PCM_INFO_PAUSE |
 		SNDRV_PCM_INFO_RESUME,
-	.formats = SNDRV_PCM_FMTBIT_S16_LE |
-		   SNDRV_PCM_FMTBIT_S24_LE |
-		   SNDRV_PCM_FMTBIT_S20_3LE,
-	.rate_min = 8000,
-	.channels_min = 2,
-	.channels_max = 2,
 	.buffer_bytes_max = IMX_DEFAULT_DMABUF_SIZE,
 	.period_bytes_min = 128,
 	.period_bytes_max = 65535, /* Limited by SDMA engine */
@@ -60,38 +48,22 @@ static const struct snd_pcm_hardware imx_pcm_hardware = {
 	.fifo_size = 0,
 };
 
-static void imx_pcm_dma_set_config_from_dai_data(
-	const struct snd_pcm_substream *substream,
-	const struct snd_dmaengine_dai_dma_data *dma_data,
-	struct dma_slave_config *slave_config)
+static void imx_pcm_dma_complete(void *arg)
 {
-	struct imx_dma_data *filter_data = dma_data->filter_data;
+	struct snd_pcm_substream *substream = arg;
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct dmaengine_pcm_runtime_data_ *prtd = substream->runtime->private_data;
+	struct snd_dmaengine_dai_dma_data *dma_data;
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-		slave_config->dst_addr = dma_data->addr;
-		slave_config->dst_maxburst = dma_data->maxburst;
-		if (dma_data->addr_width != DMA_SLAVE_BUSWIDTH_UNDEFINED)
-			slave_config->dst_addr_width = dma_data->addr_width;
-	} else {
-		slave_config->src_addr = dma_data->addr;
-		slave_config->src_maxburst = dma_data->maxburst;
-		if (dma_data->addr_width != DMA_SLAVE_BUSWIDTH_UNDEFINED)
-			slave_config->src_addr_width = dma_data->addr_width;
-	}
+	prtd->pos += snd_pcm_lib_period_bytes(substream);
+	if (prtd->pos >= snd_pcm_lib_buffer_bytes(substream))
+		prtd->pos = 0;
 
-	slave_config->slave_id = dma_data->slave_id;
+	snd_pcm_period_elapsed(substream);
 
-	/*
-	 * In dma binding mode, there is no filter_data, so dma_request need to be
-	 * set to zero.
-	*/
-	if (filter_data) {
-		slave_config->dma_request0 = filter_data->dma_request0;
-		slave_config->dma_request1 = filter_data->dma_request1;
-	} else {
-		slave_config->dma_request0 = 0;
-		slave_config->dma_request1 = 0;
-	}
+	dma_data = snd_soc_dai_get_dma_data(rtd->cpu_dai, substream);
+	if (dma_data->check_xrun && dma_data->check_xrun(substream))
+		dma_data->device_reset(substream, 1);
 }
 
 static int imx_pcm_dma_prepare_slave_config(struct snd_pcm_substream *substream,
@@ -99,18 +71,23 @@ static int imx_pcm_dma_prepare_slave_config(struct snd_pcm_substream *substream,
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_dmaengine_dai_dma_data *dma_data;
+	struct dmaengine_pcm_runtime_data_ *prtd = substream->runtime->private_data;
 	int ret;
 
 	dma_data = snd_soc_dai_get_dma_data(rtd->cpu_dai, substream);
+	prtd->callback = imx_pcm_dma_complete;
 
 	ret = snd_hwparams_to_dma_slave_config(substream, params, slave_config);
-	if (ret)
+	if (ret) {
+        printk("imx-pcm-dma.c ret = %d\n", ret);
 		return ret;
+    }
 
-	imx_pcm_dma_set_config_from_dai_data(substream, dma_data,
+	snd_dmaengine_pcm_set_config_from_dai_data(substream, dma_data,
 		slave_config);
 
 	return 0;
+
 }
 
 static const struct snd_dmaengine_pcm_config imx_dmaengine_pcm_config = {
@@ -120,7 +97,7 @@ static const struct snd_dmaengine_pcm_config imx_dmaengine_pcm_config = {
 	.prealloc_buffer_size = IMX_DEFAULT_DMABUF_SIZE,
 };
 
-int imx_pcm_dma_init(struct platform_device *pdev, unsigned int flags, size_t size)
+int imx_pcm_dma_init(struct platform_device *pdev, size_t size)
 {
 	struct snd_dmaengine_pcm_config *config;
 	struct snd_pcm_hardware *pcm_hardware;
@@ -139,12 +116,10 @@ int imx_pcm_dma_init(struct platform_device *pdev, unsigned int flags, size_t si
 
 	config->pcm_hardware = pcm_hardware;
 
-	return snd_dmaengine_pcm_register(&pdev->dev, config, flags);
+	return snd_dmaengine_pcm_register(&pdev->dev,
+		config,
+		SND_DMAENGINE_PCM_FLAG_COMPAT);
 }
 EXPORT_SYMBOL_GPL(imx_pcm_dma_init);
 
-void imx_pcm_dma_exit(struct platform_device *pdev)
-{
-	snd_dmaengine_pcm_unregister(&pdev->dev);
-}
-EXPORT_SYMBOL_GPL(imx_pcm_dma_exit);
+MODULE_LICENSE("GPL");

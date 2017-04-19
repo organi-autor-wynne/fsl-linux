@@ -1,0 +1,20 @@
+#include "imx6q-wisehmi.dts"
+
+&mxcfb1 {
+	disp_dev = "lcd";
+	mode_str = "HSD070IDW1-G";
+	interface_pix_fmt = "BGR24";
+};
+
+&ldb {
+	status = "disable";
+};
+
+&lcd {
+	status = "okay";
+};
+
+&i2c3 {
+	status = "okay";
+};
+

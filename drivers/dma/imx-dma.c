@@ -735,7 +735,7 @@ static int imxdma_alloc_chan_resources(struct dma_chan *chan)
 	struct imx_dma_data *data = chan->private;
 
 	if (data != NULL)
-		imxdmac->dma_request = data->dma_request;
+		imxdmac->dma_request = data->dma_request0;
 
 	while (imxdmac->descs_allocated < IMXDMA_MAX_CHAN_DESCRIPTORS) {
 		struct imxdma_desc *desc;

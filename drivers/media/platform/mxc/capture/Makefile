@@ -20,5 +20,8 @@ obj-$(CONFIG_MXC_CAMERA_OV5640_MIPI) += ov5640_camera_mipi.o
 adv7180_tvin-objs := adv7180.o
 obj-$(CONFIG_MXC_TVIN_ADV7180) += adv7180_tvin.o
 
+tw9990_tvin-objs := tw9990.o
+obj-$(CONFIG_MXC_TVIN_TW9990) += tw9990_tvin.o
+
 ds90ur910q_lvdsin-objs := ds90ur910q.o
 obj-$(CONFIG_MXC_LVDSIN_DS90UR910Q) += ds90ur910q_lvdsin.o

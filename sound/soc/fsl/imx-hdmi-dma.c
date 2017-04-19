@@ -70,7 +70,6 @@ struct hdmi_dma_priv {
 	dma_addr_t phy_hdmi_sdma_t;
 	struct hdmi_sdma_script *hdmi_sdma_t;
 	struct dma_chan *dma_channel;
-	struct imx_dma_data dma_data;
 	struct dma_async_tx_descriptor *desc;
 	struct imx_hdmi_sdma_params sdma_params;
 };
@@ -286,6 +285,17 @@ static void init_table(int channels)
 	}
 }
 
+/*
+ * FIXME: Disable NEON Optimization in hdmi, or it will cause crash of
+ * pulseaudio in the userspace. There is no issue for the Optimization
+ * implemenation, if only use "VPUSH, VPOP" in the function, the pulseaudio
+ * will crash also. So for my assumption, we can't use the NEON in the
+ * interrupt.(tasklet is implemented by softirq.)
+ * Disable SMP, preempt, change the dma buffer to nocached, add protection of
+ * Dn register and fpscr, all these operation have no effect to the result.
+ */
+#define HDMI_DMA_NO_NEON
+
 #ifdef HDMI_DMA_NO_NEON
 /* Optimization for IEC head */
 static void hdmi_dma_copy_16_c_lut(u16 *src, u32 *dst, int samples,
@@ -445,7 +455,7 @@ static void hdmi_dma_data_copy(struct snd_pcm_substream *substream,
 	if (runtime->access != SNDRV_PCM_ACCESS_MMAP_INTERLEAVED)
 		return;
 
-	appl_bytes = frames_to_bytes(runtime, runtime->status->hw_ptr);
+	appl_bytes =  runtime->status->hw_ptr * (runtime->frame_bits / 8);
 	if (type == 'p')
 		appl_bytes += 2 * priv->period_bytes;
 	offset = appl_bytes % priv->buffer_bytes;
@@ -734,13 +744,9 @@ static int hdmi_sdma_config(struct snd_pcm_substream *substream,
 		return -EBUSY;
 	}
 
-	priv->dma_data.data_addr1 = &priv->sdma_params.buffer_num;
-	priv->dma_data.data_addr2 = &priv->sdma_params.phyaddr;
-	priv->dma_channel->private = &priv->dma_data;
-
 	slave_config.direction = DMA_TRANS_NONE;
-	slave_config.dma_request0 = 0;
-	slave_config.dma_request1 = 0;
+	slave_config.src_addr = (dma_addr_t)priv->sdma_params.buffer_num;
+	slave_config.dst_addr = (dma_addr_t)priv->sdma_params.phyaddr;
 
 	ret = dmaengine_slave_config(priv->dma_channel, &slave_config);
 	if (ret) {
@@ -805,18 +811,24 @@ static int hdmi_dma_hw_params(struct snd_pcm_substream *substream,
 	priv->sdma_params.phyaddr = priv->phy_hdmi_sdma_t;
 
 	ret = hdmi_sdma_initbuf(dev, priv);
-	if (ret)
+	if (ret) {
+        printk("bbbbbbbbb\n");
 		return ret;
+    }
 
 	ret = hdmi_sdma_config(substream, priv);
-	if (ret)
+	if (ret) {
+        printk("ccccccccc\n");
 		return ret;
+    }
 
 	snd_pcm_set_runtime_buffer(substream, &substream->dma_buffer);
 
 	ret = hdmi_dma_configure_dma(dev, priv->channels);
-	if (ret)
+	if (ret) {
+        printk("dddddddddd\n");
 		return ret;
+    }
 
 	hdmi_dma_set_addr(priv->hw_buffer.addr, priv->dma_period_bytes);
 

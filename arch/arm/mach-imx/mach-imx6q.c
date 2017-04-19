@@ -151,6 +151,7 @@ static void __init imx6q_flexcan_fixup_wisehmi(void)
 		"/soc/aips-bus@02000000/can@02090000",
 		"/soc/aips-bus@02000000/can@02094000"
 	};
+    int ret_value = 0;
 
 	for (i = 0; i < 2; i++) {
 		enum of_gpio_flags flags;
@@ -158,6 +159,11 @@ static void __init imx6q_flexcan_fixup_wisehmi(void)
 		np = of_find_node_by_path(path[i]);
 		if (!np)
 			continue;
+
+        ret_value = of_device_is_available(np);
+        if (1 != ret_value) {
+            continue;
+        }
 
 		en_gpio = of_get_named_gpio_flags(np, "trx-en-gpio", 0, &flags);
 		if (gpio_is_valid(en_gpio)) {

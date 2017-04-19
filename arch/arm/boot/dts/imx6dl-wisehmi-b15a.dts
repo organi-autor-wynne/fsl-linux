@@ -1,0 +1,13 @@
+#include "imx6dl-wisehmi.dts"
+
+&mxcfb1 {
+	mode_str = "C123VAN01";
+};
+
+&ldb {
+	status = "okay";
+};
+
+&lcd {
+	status = "disabled";
+};

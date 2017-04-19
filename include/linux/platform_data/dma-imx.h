@@ -39,7 +39,10 @@ enum sdma_peripheral_type {
 	IMX_DMATYPE_IPU_MEMORY,	/* IPU Memory */
 	IMX_DMATYPE_ASRC,	/* ASRC */
 	IMX_DMATYPE_ESAI,	/* ESAI */
+	IMX_DMATYPE_SSI_DUAL,	/* SSI Dual FIFO */
+	IMX_DMATYPE_ASRC_SP,	/* Shared ASRC */
 	IMX_DMATYPE_HDMI,	/* HDMI Audio */
+	IMX_DMATYPE_SAI,        /* SAI Audio */
 };
 
 enum imx_dma_prio {
@@ -71,7 +74,9 @@ static inline int imx_dma_is_general_purpose(struct dma_chan *chan)
 	return strstr(dev_name(chan->device->dev), "sdma") ||
 		!strcmp(dev_name(chan->device->dev), "imx1-dma") ||
 		!strcmp(dev_name(chan->device->dev), "imx21-dma") ||
-		!strcmp(dev_name(chan->device->dev), "imx27-dma");
+		!strcmp(dev_name(chan->device->dev), "imx27-dma") ||
+	 !strcmp(chan->device->dev->driver->name, "imx-sdma") ||
+		!strcmp(chan->device->dev->driver->name, "imx-dma");
 }
 
 #endif

@@ -68,6 +68,18 @@ struct snd_dmaengine_dai_dma_data {
 	u32 maxburst;
 	unsigned int slave_id;
 	void *filter_data;
+	const char *chan_name;
+	unsigned int fifo_size;
+	bool (*check_xrun)(struct snd_pcm_substream *substream);
+	void (*device_reset)(struct snd_pcm_substream *substream, bool stop);
+};
+
+struct dmaengine_pcm_runtime_data_ {
+	struct dma_chan *dma_chan;
+	dma_cookie_t cookie;
+
+	unsigned int pos;
+	dma_async_tx_callback callback;
 };
 
 void snd_dmaengine_pcm_set_config_from_dai_data(
@@ -96,6 +108,10 @@ void snd_dmaengine_pcm_set_config_from_dai_data(
  * playback.
  */
 #define SND_DMAENGINE_PCM_FLAG_HALF_DUPLEX BIT(3)
+/*
+ * The PCM streams have custom channel names specified.
+ */
+#define SND_DMAENGINE_PCM_FLAG_CUSTOM_CHANNEL_NAME BIT(4)
 
 /**
  * struct snd_dmaengine_pcm_config - Configuration data for dmaengine based PCM
@@ -122,6 +138,8 @@ struct snd_dmaengine_pcm_config {
 			struct snd_soc_pcm_runtime *rtd,
 			struct snd_pcm_substream *substream);
 	dma_filter_fn compat_filter_fn;
+	struct device *dma_dev;
+	const char *chan_names[SNDRV_PCM_STREAM_LAST + 1];
 
 	const struct snd_pcm_hardware *pcm_hardware;
 	unsigned int prealloc_buffer_size;

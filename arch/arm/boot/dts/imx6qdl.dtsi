@@ -267,6 +267,8 @@
 					dmas = <&sdma 37 1 0>,
 					       <&sdma 38 1 0>;
 					dma-names = "rx", "tx";
+					fsl,fifo-depth = <15>;
+					fsl,ssi-dma-events = <38 37>;
 					status = "disabled";
 				};
 
@@ -1469,6 +1471,7 @@
 
 		pinctrl_ipu1_2: ipu1grp-2 { /* parallel camera */
 			fsl,pins = <
+				/*
 				MX6QDL_PAD_CSI0_DAT12__IPU1_CSI0_DATA12    0x80000000
 				MX6QDL_PAD_CSI0_DAT13__IPU1_CSI0_DATA13    0x80000000
 				MX6QDL_PAD_CSI0_DAT14__IPU1_CSI0_DATA14    0x80000000
@@ -1481,6 +1484,7 @@
 				MX6QDL_PAD_CSI0_PIXCLK__IPU1_CSI0_PIXCLK   0x80000000
 				MX6QDL_PAD_CSI0_MCLK__IPU1_CSI0_HSYNC      0x80000000
 				MX6QDL_PAD_CSI0_VSYNC__IPU1_CSI0_VSYNC     0x80000000
+				*/
 			>;
 		};
 
@@ -1542,6 +1546,14 @@
 			>;
 		};
 	};
+
+    pwm4 {
+        pinctrl_pwm4_1: pwm4grp-1 {
+            fsl,pins = <
+                MX6QDL_PAD_SD4_DAT2__PWM4_OUT 0x1b0b1
+            >;
+        };
+    };
 
 	spdif {
 		pinctrl_spdif_1: spdifgrp-1 {

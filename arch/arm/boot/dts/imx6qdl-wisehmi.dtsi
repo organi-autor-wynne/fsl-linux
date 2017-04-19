@@ -28,6 +28,17 @@
 		mclk_source = <0>;
 		};
 		
+	sound {
+		compatible = "fsl,imx6-wisehmi-audio-wm8960",
+		          "fsl,imx-audio-wm8960";
+		model = "imx6-wisehmi-audio-wm8960";
+		cpu-dai = <&ssi1>;
+		audio-codec = <&codec>;
+		mux-int-port = <1>;
+		mux-ext-port = <3>;
+		codec-master;
+	};
+
 	wisehmi_bl: pwm-backlight {
 		compatible = "pwm-backlight";
 		pwms = <&pwm3 0 50000>;
@@ -42,6 +53,7 @@
 		    70 71 72 73 74 75 76 77 78 79
 		    80 81 82 83 84 85 86 87 88 89
 		    90 91 92 93 94 95 96 97 98 99
+		    100
 		    >;   
 		default-brightness-level = <0>; 
 		status = "disabled";
@@ -50,6 +62,33 @@
 	displaysw: display-switch {
 	    	display-sw-gpio = <&gpio1 16 GPIO_ACTIVE_HIGH>;
 	};
+
+    wisehmi_beeper: pwm-beeper {
+        compatible = "pwm-beeper";
+        pwms = <&pwm4 0 500000>;
+        status = "disabled";
+    };
+};
+
+&pwm3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm3_2>;
+	status = "disabled";
+};
+
+&pwm4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm4_1>;
+	status = "disabled";
+};
+
+&ssi1 {
+    fsl,mode = "i2s-slave";
+};
+
+&audmux {
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_audmux>;
 };
 
 &fec {
@@ -75,7 +114,7 @@
 	sec_disp_id = <1>;
 
 	display-timings { 
-		CHUNGHWA_CLAA088WA01XN { /*Chunghwa CLAA088WA01XN is 8.8‚Äù color TFT-LCD*/
+		CHUNGHWA_CLAA088WA01XN { /*Chunghwa CLAA088WA01XN is 8.8‚Ä?color TFT-LCD*/
 			clock-frequency = <45000000>;
 			hactive = <1280>;
 			vactive = <480>;
@@ -130,6 +169,50 @@
 			hsync-len = <60>;
 			vsync-len = <10>;
 		};
+        CLAA123PA01CW { /*cpt 1440*540 panel*/
+            clock-frequency = <61250000>;
+            hactive = <1440>;
+            vactive = <540>;
+            hback-porch = <200>;
+            hfront-porch = <200>;
+            vback-porch = <6>;
+            vfront-porch = <6>;
+            hsync-len = <162>;
+            vsync-len = <7>;
+         };
+        C123VAN01 { /*HannStar 1440*540 panel*/
+            clock-frequency = <55100000>;
+            hactive = <1440>;
+            vactive = <540>;
+            hback-porch = <65>;
+            hfront-porch = <65>;
+            vback-porch = <6>;
+            vfront-porch = <6>;
+            hsync-len = <70>;
+            vsync-len = <7>;
+         };  
+         HSD123IPW1_A00 {  /* hannstar 12.3 1920*720 */
+            clock-frequency = <95040000>;
+            hactive = <1920>;
+            vactive = <720>;
+            hback-porch = <38>;
+            hfront-porch = <38>;
+            vback-porch = <35>;
+            vfront-porch = <35>;
+            hsync-len = <4>;
+            vsync-len = <2>;
+         };
+         CLAA123FBA1_XN {	/* cpt 12.3 1920*720 */
+            clock-frequency = <104600000>;
+            hactive = <1920>;
+            vactive = <720>;
+            hback-porch = <150>;
+            hfront-porch = <150>;
+            vback-porch = <15>;
+            vfront-porch = <15>;
+            hsync-len = <80>;
+            vsync-len = <8>;
+        };
 	};
 };
 
@@ -152,8 +235,8 @@
 			vactive = <480>;
 			hback-porch = <40>;
 			hfront-porch = <40>;
-			vback-porch = <13>;
-			vfront-porch = <29>;
+			vback-porch = <29>;
+			vfront-porch = <13>;
 			hsync-len = <48>;
 			vsync-len = <3>;
 		};
@@ -312,6 +395,27 @@
 	pinctrl-0 = <&pinctrl_i2c3_1>;
 	
  	status = "disabled";
+
+    	codec: wm8960@1a {
+           	compatible = "wlf,wm8960";
+           	reg = <0x1a>;
+           	clocks = <&clks 201>;
+           	clock-names = "mclk";
+	};
+       
+	tw9990: tw9990@44 {
+		compatible = "intersil,tw9990";
+		reg = <0x44>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ipu1_2>;
+		clocks = <&clks 201>;
+		clock-names = "csi_mclk";
+		pdn-gpios = <&gpio1 18 GPIO_ACTIVE_HIGH>;
+ 		rstb-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		csi_id = <1>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+	};
 };
 
 &iomuxc {
@@ -324,6 +428,23 @@
                     MX6QDL_PAD_GPIO_19__CCM_CLKO1   0x1b0b0
                  >;
              };
+
+	pinctrl_i2c3: i2c3grp {
+	        fsl,pins = <
+	            MX6QDL_PAD_EIM_D17__I2C3_SCL    0x4001b8b1
+	            MX6QDL_PAD_EIM_D18__I2C3_SDA    0x4001b8b1
+	        >;
+	    };
+	    
+   	 pinctrl_audmux: audmuxgrp {
+                    fsl,pins = <
+                        MX6QDL_PAD_CSI0_DAT7__AUD3_RXD  0x130b0
+                        MX6QDL_PAD_CSI0_DAT4__AUD3_TXC  0x130b0
+                        MX6QDL_PAD_CSI0_DAT5__AUD3_TXD  0x110b0
+                        MX6QDL_PAD_CSI0_DAT6__AUD3_TXFS 0x130b0
+                    >;
+                };
+
        pinctrl_pwm3_2: pwm3grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_SD1_DAT1__PWM3_OUT 	0x1b0b1
@@ -343,10 +464,4 @@
 	csi_id = <1>;
 	v_channel = <0>;
 	lanes = <2>;
-};
-
-&pwm3 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm3_2>;
-	status = "disabled";
 };
