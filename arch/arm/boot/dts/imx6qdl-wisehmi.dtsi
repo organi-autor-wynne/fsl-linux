@@ -459,7 +459,7 @@
 };
 
 &mipi_csi {
-	status = "okay";
+	status = "disabled";
 	ipu_id = <0>;
 	csi_id = <1>;
 	v_channel = <0>;

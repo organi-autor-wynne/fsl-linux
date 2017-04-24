@@ -351,7 +351,7 @@ static int tw9990_mask_set(u8 reg, u8 mask, u8 val)
 static void tw9990_reset(void)
 {
 	tw9990_mask_set(ACNTL1, SRESET, SRESET);
-	msleep(1);
+	msleep(10);
 }
 
 static int tw9990_power(int enable)
@@ -410,8 +410,8 @@ static void tw9990_get_std(v4l2_std_id *std)
 		tw9990_data.sen.pix.height = video_fmts[video_idx].raw_height;
 		if (*std == V4L2_STD_NTSC) {
 			tw9990_write_reg(CROP_HI, 0x02);
-			tw9990_write_reg(VDELAY_LO, 0x12);
 			tw9990_write_reg(VACTIVE_LO, 0xf4);
+			tw9990_write_reg(VDELAY_LO, 0x12);
 			tw9990_mask_set(VVBI, 0x10, 0x10);
 		}
 		else if (*std == V4L2_STD_PAL) {
@@ -559,6 +559,7 @@ static int ioctl_s_parm(struct v4l2_int_device *s, struct v4l2_streamparm *a)
 	    	tw9990_write_reg(INFORM, 0x40);
             break;
         }
+		tw9990_write_reg(INFORM, 0x44);
         break;
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT:
 	case V4L2_BUF_TYPE_VIDEO_OVERLAY:
@@ -984,7 +985,6 @@ static struct v4l2_int_device tw9990_int_device = {
 		.slave = &tw9990_slave,
 	},
 };
-
 
 /***********************************************************************
  * I2C client and driver.
