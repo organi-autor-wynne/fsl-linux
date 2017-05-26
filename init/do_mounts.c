@@ -169,7 +169,10 @@ static int __init do_initroot(char *init_filename)
 	sys_chdir("/initroot");
 	sys_chroot(".");
 	devtmpfs_mount("dev");
-
+	
+	sys_mkdir("proc", 0755);
+ 	sys_mount("nondev", "proc", "proc", MS_SILENT, NULL);
+ 
 	return sys_execve(init_filename,
 		(const char __user *const __user *)argv, 
 		(const char __user *const __user *)envp_init);
