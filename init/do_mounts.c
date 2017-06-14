@@ -311,6 +311,7 @@ printk("try_initroot info:	dev:%s, fs:%s, initscript:%s \n ", info.dev_name, inf
 		if(ret == SIGCHLD || ret == -EAGAIN){
 			printk("initroot exit\n");
 			sys_umount("/initroot/dev", MNT_DETACH);
+			sys_umount("/initroot/proc", MNT_DETACH);
 			if(strcmp(info.fs, "initramfs"))
 				sys_umount("/initroot", MNT_DETACH);
 		}
