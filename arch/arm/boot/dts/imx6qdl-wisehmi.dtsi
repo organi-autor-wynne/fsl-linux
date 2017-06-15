@@ -201,6 +201,50 @@
 			hsync-active = <1>; 
 			vsync-active = <1>;
 		};
+		CPT_CLAA123PA01CW:lvds_1440x540_61M { /*cpt 1440*540 panel*/
+			clock-frequency = <61250000>;
+			hactive = <1440>;
+			vactive = <540>;
+			hback-porch = <200>;
+			hfront-porch = <200>;
+			vback-porch = <6>;
+			vfront-porch = <6>;
+			hsync-len = <162>;
+			vsync-len = <7>;
+		};
+		AUO_C123VAN01_1:lvds_1440x540_55M{ /*AUO 1440*540 panel*/
+			clock-frequency = <55100000>;
+			hactive = <1440>;
+			vactive = <540>;
+			hback-porch = <65>;
+			hfront-porch = <65>;
+			vback-porch = <6>;
+			vfront-porch = <6>;
+			hsync-len = <70>;
+			vsync-len = <7>;
+		};  
+		HSD_HSD123IPW1_A00:lvds_1920x720_95.04M {  /* hannstar 12.3 1920*720 */
+			clock-frequency = <95040000>;
+			hactive = <1920>;
+			vactive = <720>;
+			hback-porch = <38>;
+			hfront-porch = <38>;
+			vback-porch = <35>;
+			vfront-porch = <35>;
+			hsync-len = <4>;
+			vsync-len = <2>;
+		};
+		CPT_CLAA123FBA1_XN:lvds_1920x720_104M {	/* cpt 12.3 1920*720 */
+			clock-frequency = <104600000>;
+			hactive = <1920>;
+			vactive = <720>;
+			hback-porch = <150>;
+			hfront-porch = <150>;
+			vback-porch = <15>;
+			vfront-porch = <15>;
+			hsync-len = <80>;
+			vsync-len = <8>;
+		};
 
 		/*TTL lcd*/
 		TX26D25VM2BAA:ttl_800x256_20M{

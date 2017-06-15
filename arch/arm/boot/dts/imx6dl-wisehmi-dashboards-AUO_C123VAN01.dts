@@ -1,0 +1,18 @@
+#include "imx6dl-wisehmi-dashboards.dts"
+
+&mxcfb1 {
+	disp_dev = "ldb";
+};
+
+&lcd {
+	status = "disabled";
+};
+
+&ldb {
+	status = "okay";
+	lvds-channel@0 {
+		crtc = "ipu1-di0";
+		
+		native-mode = <&AUO_C123VAN01_1>;
+	};
+};

@@ -1,0 +1,14 @@
+#include "imx6dl-wisehmi.dts"
+
+&fec {
+	status = "disabled";
+};
+
+&usbh1 {
+	status = "disabled";
+};
+
+&usbotg {
+	dr_mode = "host";
+	status = "okay";
+};
