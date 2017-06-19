@@ -1,5 +1,9 @@
 #include "imx6dl-wisehmi.dts"
 
+&chosen {
+	bootargs = "root=/dev/mmcblk1p2 rootfstype=ext4 rootwait coherent_pool=2M rw console=ttymxc3,115200n8 lpj=7905280 initroot=10:none,initramfs,/startup/run quiet";
+};
+
 &fec {
 	status = "disabled";
 };
