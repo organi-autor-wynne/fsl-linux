@@ -106,7 +106,7 @@
 };
 
 &ldb {
-	ipu_id = <1>;
+	ipu_id = <0>;
 	disp_id = <0>;
 	ext_ref = <1>;
 	mode = "sin0";
