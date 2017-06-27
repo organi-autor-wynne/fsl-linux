@@ -13,6 +13,10 @@
 };
 
 &usbotg {
+	/*srp-disable;
+	hnp-disable;
+	adp-disable;
+	dr_mode = "peripheral";*/
 	dr_mode = "host";
 	status = "okay";
 };
