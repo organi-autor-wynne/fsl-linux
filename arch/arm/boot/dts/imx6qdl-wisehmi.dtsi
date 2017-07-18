@@ -213,7 +213,7 @@
 			vsync-len = <7>;
 		};
 		AUO_C123VAN01_1:lvds_1440x540_55M{ /*AUO 1440*540 panel*/
-			clock-frequency = <55100000>;
+			clock-frequency = <45100000>;
 			hactive = <1440>;
 			vactive = <540>;
 			hback-porch = <65>;
