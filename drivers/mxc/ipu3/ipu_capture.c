@@ -161,11 +161,14 @@ ipu_csi_init_interface(struct ipu_soc *ipu, uint16_t width, uint16_t height,
 			 * Field0ActiveEnd = 0x5, Field0ActiveStart = 0x1
 			 */
 			ipu_csi_write(ipu, csi, 0xD07DF, CSI_CCIR_CODE_1);
+			//ipu_csi_write(ipu, csi, 0x40596, CSI_CCIR_CODE_1);
 			/*
 			 * Field1BlankEnd = 0x6, Field1BlankStart = 0x2,
 			 * Field1ActiveEnd = 0x4, Field1ActiveStart = 0
 			 */
 			ipu_csi_write(ipu, csi, 0x40596, CSI_CCIR_CODE_2);
+			//ipu_csi_write(ipu, csi, 0xD07DF, CSI_CCIR_CODE_2);
+
 			ipu_csi_write(ipu, csi, 0xFF0000, CSI_CCIR_CODE_3);
 		} else {
 			dev_err(ipu->dev, "Unsupported CCIR656 interlaced "
